@@ -954,6 +954,11 @@
                     <span>Clienti</span>
                     <span class="count" id="countClienti">0</span>
                 </div>
+                <div class="nav-item" data-view="task_generali">
+                    <span>📝</span>
+                    <span>Task Generali</span>
+                    <span class="count" id="countTaskGenerali">0</span>
+                </div>
             </div>
 
             <div class="sidebar-footer">
@@ -993,6 +998,19 @@
                 <!-- Cliente Detail View -->
                 <div id="clienteDetailView" class="project-detail">
                     <!-- Populated dynamically -->
+                </div>
+
+                <!-- Task Generali View -->
+                <div id="taskGeneraliView" class="view-content" style="display: none;">
+                    <div class="task-filters" id="taskGeneraliFilters">
+                        <button class="task-filter active" onclick="filterTaskGenerali('tutti', this)">Tutti</button>
+                        <button class="task-filter" onclick="filterTaskGenerali('da_fare', this)">Da fare</button>
+                        <button class="task-filter" onclick="filterTaskGenerali('in_corso', this)">In corso</button>
+                        <button class="task-filter" onclick="filterTaskGenerali('completato', this)">Completati</button>
+                    </div>
+                    <ul class="task-list" id="taskGeneraliList">
+                        <div class="loading">Caricamento...</div>
+                    </ul>
                 </div>
             </div>
         </main>
@@ -1167,6 +1185,53 @@
         </div>
     </div>
 
+    <!-- Modal Nuovo/Modifica Task Generale -->
+    <div class="modal-overlay" id="modalTaskGenerale">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTaskGeneraleTitle">Nuovo Task</h3>
+                <button class="modal-close" onclick="closeModal('modalTaskGenerale')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formTaskGenerale">
+                    <input type="hidden" id="taskGeneraleId">
+                    <div class="form-group">
+                        <label>Titolo *</label>
+                        <input type="text" id="taskGeneraleTitolo" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrizione</label>
+                        <textarea id="taskGeneraleDescrizione" placeholder="Dettagli del task..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Priorità</label>
+                        <select id="taskGeneralePriorita">
+                            <option value="1">Alta</option>
+                            <option value="2" selected>Media</option>
+                            <option value="3">Bassa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stato</label>
+                        <select id="taskGeneraleStato">
+                            <option value="da_fare">Da fare</option>
+                            <option value="in_corso">In corso</option>
+                            <option value="completato">Completato</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Data Scadenza</label>
+                        <input type="date" id="taskGeneraleScadenza">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalTaskGenerale')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaTaskGenerale()">Salva</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Nuova Attività Cliente -->
     <div class="modal-overlay" id="modalAttivita">
         <div class="modal">
@@ -1211,10 +1276,12 @@
         // Stato applicazione
         let progetti = [];
         let clienti = [];
+        let taskGenerali = [];
         let currentView = 'progetti';
         let currentProjectId = null;
         let currentClienteId = null;
         let currentFilter = 'tutti';
+        let currentTaskGeneraliFilter = 'tutti';
         let isFirstAccess = false;
 
         // ==================== LOGIN ====================
@@ -1339,6 +1406,7 @@
         async function initApp() {
             await loadClienti();
             await loadProgetti();
+            await loadTaskGenerali();
             setupEventListeners();
         }
 
@@ -1361,6 +1429,8 @@
             document.getElementById('btnNuovo').addEventListener('click', () => {
                 if (currentView === 'clienti') {
                     openModalCliente();
+                } else if (currentView === 'task_generali') {
+                    openModalTaskGenerale();
                 } else {
                     openModalProgetto();
                 }
@@ -1387,12 +1457,18 @@
             document.getElementById('projectDetailView').classList.remove('active');
             document.getElementById('clientiView').style.display = 'none';
             document.getElementById('clienteDetailView').classList.remove('active');
+            document.getElementById('taskGeneraliView').style.display = 'none';
 
             if (view === 'clienti') {
                 viewTitle.textContent = 'Clienti';
                 btnNuovo.textContent = '+ Nuovo Cliente';
                 document.getElementById('clientiView').style.display = 'block';
                 renderClienti();
+            } else if (view === 'task_generali') {
+                viewTitle.textContent = 'Task Generali';
+                btnNuovo.textContent = '+ Nuovo Task';
+                document.getElementById('taskGeneraliView').style.display = 'block';
+                renderTaskGenerali();
             } else {
                 btnNuovo.textContent = '+ Nuovo Progetto';
                 document.getElementById('projectsView').style.display = 'block';
@@ -2499,6 +2575,238 @@
             setTimeout(() => {
                 toast.remove();
             }, 3000);
+        }
+
+        // ==================== TASK GENERALI ====================
+
+        async function loadTaskGenerali() {
+            try {
+                const { data, error } = await db
+                    .from('task_generali')
+                    .select('*')
+                    .neq('stato', 'archiviato')
+                    .order('priorita')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                taskGenerali = data || [];
+                updateTaskGeneraliCount();
+            } catch (error) {
+                showToast('Errore nel caricamento task generali: ' + error.message, 'error');
+            }
+        }
+
+        function updateTaskGeneraliCount() {
+            const count = taskGenerali.filter(t => t.stato !== 'completato').length;
+            document.getElementById('countTaskGenerali').textContent = count;
+        }
+
+        function renderTaskGenerali() {
+            const list = document.getElementById('taskGeneraliList');
+            let filtered = taskGenerali;
+
+            if (currentTaskGeneraliFilter !== 'tutti') {
+                filtered = taskGenerali.filter(t => t.stato === currentTaskGeneraliFilter);
+            }
+
+            // Ordina: in_corso prima, poi da_fare, poi completato. Poi per priorità
+            filtered.sort((a, b) => {
+                const statoOrder = { 'in_corso': 0, 'da_fare': 1, 'completato': 2 };
+                if (statoOrder[a.stato] !== statoOrder[b.stato]) {
+                    return statoOrder[a.stato] - statoOrder[b.stato];
+                }
+                return a.priorita - b.priorita;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nessun task</h3>
+                        <p>Aggiungi il tuo primo task cliccando su "+ Nuovo Task"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = filtered.map(task => renderTaskGeneraleItem(task)).join('');
+        }
+
+        function renderTaskGeneraleItem(task) {
+            const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+            const scadenzaHtml = task.data_scadenza ?
+                `<span style="margin-left: 10px; color: ${isScaduto(task.data_scadenza) ? '#e74c3c' : '#888'};">
+                    📅 ${formatData(task.data_scadenza)}
+                </span>` : '';
+
+            return `
+                <li class="task-item ${task.stato}" data-stato="${task.stato}">
+                    <div class="task-checkbox" onclick="toggleTaskGeneraleStatus('${task.id}', '${task.stato}')">
+                        ${task.stato === 'completato' ? '✓' : task.stato === 'in_corso' ? '◐' : ''}
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title">${escapeHtml(task.titolo)}</div>
+                        ${task.descrizione ? `<div class="task-description">${escapeHtml(task.descrizione)}</div>` : ''}
+                        <div class="task-meta">
+                            <span class="task-priority priority-${task.priorita}">Priorità: ${priorityLabels[task.priorita]}</span>
+                            ${scadenzaHtml}
+                            <select class="task-status-select" onchange="changeTaskGeneraleStatus('${task.id}', this.value)">
+                                <option value="da_fare" ${task.stato === 'da_fare' ? 'selected' : ''}>Da fare</option>
+                                <option value="in_corso" ${task.stato === 'in_corso' ? 'selected' : ''}>In corso</option>
+                                <option value="completato" ${task.stato === 'completato' ? 'selected' : ''}>Completato</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <button onclick="openModalTaskGenerale('${task.id}')" title="Modifica">✏️</button>
+                        <button onclick="eliminaTaskGenerale('${task.id}')" title="Elimina">🗑️</button>
+                    </div>
+                </li>
+            `;
+        }
+
+        function isScaduto(dataScadenza) {
+            const oggi = new Date();
+            oggi.setHours(0, 0, 0, 0);
+            const scadenza = new Date(dataScadenza);
+            return scadenza < oggi;
+        }
+
+        function formatData(data) {
+            return new Date(data).toLocaleDateString('it-IT', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function filterTaskGenerali(stato, btn) {
+            document.querySelectorAll('#taskGeneraliFilters .task-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTaskGeneraliFilter = stato;
+            renderTaskGenerali();
+        }
+
+        async function toggleTaskGeneraleStatus(id, currentStato) {
+            const newStato = currentStato === 'completato' ? 'da_fare' :
+                            currentStato === 'da_fare' ? 'in_corso' : 'completato';
+            await changeTaskGeneraleStatus(id, newStato);
+        }
+
+        async function changeTaskGeneraleStatus(id, newStato) {
+            try {
+                const updateData = { stato: newStato };
+                if (newStato === 'completato') {
+                    updateData.completed_at = new Date().toISOString();
+                } else {
+                    updateData.completed_at = null;
+                }
+
+                const { error } = await db
+                    .from('task_generali')
+                    .update(updateData)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadTaskGenerali();
+                renderTaskGenerali();
+                showToast('Stato task aggiornato', 'success');
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function openModalTaskGenerale(id = null) {
+            document.getElementById('modalTaskGeneraleTitle').textContent = id ? 'Modifica Task' : 'Nuovo Task';
+            document.getElementById('taskGeneraleId').value = id || '';
+
+            if (id) {
+                try {
+                    const { data: task, error } = await db
+                        .from('task_generali')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    document.getElementById('taskGeneraleTitolo').value = task.titolo;
+                    document.getElementById('taskGeneraleDescrizione').value = task.descrizione || '';
+                    document.getElementById('taskGeneralePriorita').value = task.priorita;
+                    document.getElementById('taskGeneraleStato').value = task.stato;
+                    document.getElementById('taskGeneraleScadenza').value = task.data_scadenza || '';
+                } catch (error) {
+                    showToast('Errore: ' + error.message, 'error');
+                    return;
+                }
+            } else {
+                document.getElementById('formTaskGenerale').reset();
+                document.getElementById('taskGeneralePriorita').value = '2';
+                document.getElementById('taskGeneraleStato').value = 'da_fare';
+            }
+
+            openModal('modalTaskGenerale');
+        }
+
+        async function salvaTaskGenerale() {
+            const id = document.getElementById('taskGeneraleId').value;
+            const data = {
+                titolo: document.getElementById('taskGeneraleTitolo').value,
+                descrizione: document.getElementById('taskGeneraleDescrizione').value || null,
+                priorita: parseInt(document.getElementById('taskGeneralePriorita').value),
+                stato: document.getElementById('taskGeneraleStato').value,
+                data_scadenza: document.getElementById('taskGeneraleScadenza').value || null
+            };
+
+            if (data.stato === 'completato') {
+                data.completed_at = new Date().toISOString();
+            } else {
+                data.completed_at = null;
+            }
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('task_generali')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Task aggiornato!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('task_generali')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Task creato!', 'success');
+                }
+
+                closeModal('modalTaskGenerale');
+                await loadTaskGenerali();
+                renderTaskGenerali();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaTaskGenerale(id) {
+            if (!confirm('Sei sicuro di voler eliminare questo task?')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('task_generali')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Task eliminato', 'success');
+                await loadTaskGenerali();
+                renderTaskGenerali();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
         }
     </script>
 </body>
