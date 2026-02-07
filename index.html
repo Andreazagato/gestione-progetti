@@ -1283,6 +1283,71 @@
         let currentFilter = 'tutti';
         let currentTaskGeneraliFilter = 'tutti';
         let isFirstAccess = false;
+        let encryptionKey = null; // Chiave di crittografia derivata dalla password
+
+        // ==================== CRITTOGRAFIA ====================
+
+        async function deriveKey(password) {
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            );
+            return crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: encoder.encode('gestione-progetti-salt-2024'),
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encrypt(text) {
+            if (!text || !encryptionKey) return text;
+            try {
+                const encoder = new TextEncoder();
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const encrypted = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    encryptionKey,
+                    encoder.encode(text)
+                );
+                const combined = new Uint8Array(iv.length + encrypted.byteLength);
+                combined.set(iv);
+                combined.set(new Uint8Array(encrypted), iv.length);
+                return 'ENC:' + btoa(String.fromCharCode(...combined));
+            } catch (e) {
+                console.error('Errore crittografia:', e);
+                return text;
+            }
+        }
+
+        async function decrypt(encryptedText) {
+            if (!encryptedText || !encryptionKey) return encryptedText;
+            if (!encryptedText.startsWith('ENC:')) return encryptedText; // Non criptato
+            try {
+                const data = Uint8Array.from(atob(encryptedText.slice(4)), c => c.charCodeAt(0));
+                const iv = data.slice(0, 12);
+                const encrypted = data.slice(12);
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    encryptionKey,
+                    encrypted
+                );
+                return new TextDecoder().decode(decrypted);
+            } catch (e) {
+                console.error('Errore decrittografia:', e);
+                return '[Errore decrittografia]';
+            }
+        }
 
         // ==================== LOGIN ====================
 
@@ -1313,7 +1378,9 @@
 
                     if (error) throw error;
 
+                    encryptionKey = await deriveKey(password);
                     sessionStorage.setItem('authenticated', 'true');
+                    sessionStorage.setItem('_ep', btoa(password)); // Salva temporaneamente per la sessione
                     showApp();
                 } catch (error) {
                     errorEl.textContent = 'Errore: ' + error.message;
@@ -1332,7 +1399,9 @@
 
                     const hash = await hashPassword(password);
                     if (hash === data.password_hash) {
+                        encryptionKey = await deriveKey(password);
                         sessionStorage.setItem('authenticated', 'true');
+                        sessionStorage.setItem('_ep', btoa(password)); // Salva temporaneamente per la sessione
                         showApp();
                     } else {
                         errorEl.textContent = 'Password errata';
@@ -1377,9 +1446,16 @@
                 enableFirstAccess();
             }
 
-            // Verifica sessione
+            // Verifica sessione e ripristina chiave crittografia
             if (sessionStorage.getItem('authenticated') === 'true') {
-                showApp();
+                const savedPass = sessionStorage.getItem('_ep');
+                if (savedPass) {
+                    encryptionKey = await deriveKey(atob(savedPass));
+                    showApp();
+                } else {
+                    // Sessione senza chiave, richiedi login
+                    sessionStorage.removeItem('authenticated');
+                }
             }
         }
 
@@ -1398,6 +1474,8 @@
 
         function logout() {
             sessionStorage.removeItem('authenticated');
+            sessionStorage.removeItem('_ep');
+            encryptionKey = null;
             location.reload();
         }
 
@@ -1682,6 +1760,14 @@
                     return a.priorita - b.priorita;
                 });
 
+                // Renderizza credenziali (async)
+                const credenzialiHtml = (credenziali || []).length === 0
+                    ? `<div class="empty-state" style="padding: 30px;"><p>Nessuna credenziale salvata per questo progetto.</p></div>`
+                    : (await Promise.all((credenziali || []).map(cred => renderCredentialItem(cred)))).join('');
+
+                // Decripta note progetto
+                const noteDecriptate = await decrypt(progetto.note);
+
                 detailView.innerHTML = `
                     <div class="detail-header">
                         <div class="detail-header-top">
@@ -1729,7 +1815,7 @@
                             📝 Note e Informazioni
                             <button class="btn btn-secondary btn-small" onclick="openModalProgetto('${progetto.id}')">Modifica</button>
                         </h3>
-                        <div class="notes-content">${progetto.note ? escapeHtml(progetto.note) : ''}</div>
+                        <div class="notes-content">${noteDecriptate ? escapeHtml(noteDecriptate) : ''}</div>
                     </div>
 
                     <div class="credentials-section">
@@ -1738,11 +1824,7 @@
                             <button class="btn btn-primary btn-small" onclick="openModalCredenziale('progetto', '${progetto.id}')">+ Aggiungi</button>
                         </h3>
                         <ul class="credentials-list">
-                            ${(credenziali || []).length === 0 ? `
-                                <div class="empty-state" style="padding: 30px;">
-                                    <p>Nessuna credenziale salvata per questo progetto.</p>
-                                </div>
-                            ` : (credenziali || []).map(cred => renderCredentialItem(cred)).join('')}
+                            ${credenzialiHtml}
                         </ul>
                     </div>
 
@@ -1777,27 +1859,49 @@
         }
 
         // Render credential item
-        function renderCredentialItem(cred) {
+        async function renderCredentialItem(cred) {
+            // Decripta i dati per la visualizzazione
+            const decryptedUrl = await decrypt(cred.url);
+            const decryptedUsername = await decrypt(cred.username);
+            const decryptedNote = await decrypt(cred.note);
+            // Password non viene mostrata, solo indicatore
+
             return `
                 <li class="credential-item">
                     <div class="credential-icon">🔑</div>
                     <div class="credential-content">
                         <div class="credential-title">${escapeHtml(cred.nome_servizio)}</div>
                         <div class="credential-details">
-                            ${cred.username ? `<span>👤 ${escapeHtml(cred.username)}</span>` : ''}
+                            ${decryptedUsername ? `<span>👤 ${escapeHtml(decryptedUsername)}</span>` : ''}
                             ${cred.password ? `<span class="password-field">🔒 ••••••••</span>` : ''}
-                            ${cred.url ? `<span>🔗 <a href="${escapeHtml(cred.url)}" target="_blank">${escapeHtml(cred.url)}</a></span>` : ''}
+                            ${decryptedUrl ? `<span>🔗 <a href="${escapeHtml(decryptedUrl)}" target="_blank">${escapeHtml(decryptedUrl)}</a></span>` : ''}
                         </div>
-                        ${cred.note ? `<div style="font-size: 0.8rem; color: #888; margin-top: 5px;">${escapeHtml(cred.note)}</div>` : ''}
+                        ${decryptedNote ? `<div style="font-size: 0.8rem; color: #888; margin-top: 5px;">${escapeHtml(decryptedNote)}</div>` : ''}
                     </div>
                     <div class="credential-actions">
-                        ${cred.username ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(cred.username)}', 'Username')">📋 User</button>` : ''}
-                        ${cred.password ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(cred.password)}', 'Password')">📋 Pass</button>` : ''}
+                        ${decryptedUsername ? `<button class="copy-btn" onclick="copyCredential('${cred.id}', 'username')">📋 User</button>` : ''}
+                        ${cred.password ? `<button class="copy-btn" onclick="copyCredential('${cred.id}', 'password')">📋 Pass</button>` : ''}
                         <button onclick="openModalCredenziale('edit', '${cred.id}')">✏️</button>
                         <button onclick="eliminaCredenziale('${cred.id}')">🗑️</button>
                     </div>
                 </li>
             `;
+        }
+
+        async function copyCredential(credId, field) {
+            try {
+                const { data: cred, error } = await db
+                    .from('credenziali')
+                    .select(field)
+                    .eq('id', credId)
+                    .single();
+                if (error) throw error;
+                const decrypted = await decrypt(cred[field]);
+                await navigator.clipboard.writeText(decrypted);
+                showToast(`${field === 'username' ? 'Username' : 'Password'} copiato negli appunti!`, 'success');
+            } catch (e) {
+                showToast('Errore copia: ' + e.message, 'error');
+            }
         }
 
         function copyToClipboard(text, label) {
@@ -1910,7 +2014,6 @@
                         <h3>${escapeHtml(cliente.nome)}</h3>
                         ${cliente.email ? `<div class="info">📧 ${escapeHtml(cliente.email)}</div>` : ''}
                         ${cliente.telefono ? `<div class="info">📞 ${escapeHtml(cliente.telefono)}</div>` : ''}
-                        ${cliente.note ? `<div class="info" style="margin-top: 10px; color: #888;">${escapeHtml(cliente.note)}</div>` : ''}
                         <div class="progetti-count">📁 ${progettiCliente.length} progett${progettiCliente.length === 1 ? 'o' : 'i'}</div>
                     </div>
                 `;
@@ -1949,6 +2052,14 @@
                 const detailView = document.getElementById('clienteDetailView');
                 detailView.classList.add('active');
 
+                // Renderizza credenziali cliente (async)
+                const credenzialiClienteHtml = (credenziali || []).length === 0
+                    ? `<div class="empty-state" style="padding: 30px;"><p>Nessuna credenziale salvata per questo cliente.</p></div>`
+                    : (await Promise.all((credenziali || []).map(cred => renderCredentialItem(cred)))).join('');
+
+                // Decripta note cliente
+                const noteClienteDecriptate = await decrypt(cliente.note);
+
                 detailView.innerHTML = `
                     <div class="detail-header">
                         <div class="detail-header-top">
@@ -1981,10 +2092,10 @@
                         </div>
                     </div>
 
-                    ${cliente.note ? `
+                    ${noteClienteDecriptate ? `
                     <div class="notes-section">
                         <h3>📝 Note</h3>
-                        <div class="notes-content">${escapeHtml(cliente.note)}</div>
+                        <div class="notes-content">${escapeHtml(noteClienteDecriptate)}</div>
                     </div>
                     ` : ''}
 
@@ -1994,11 +2105,7 @@
                             <button class="btn btn-primary btn-small" onclick="openModalCredenziale('cliente', '${cliente.id}')">+ Aggiungi</button>
                         </h3>
                         <ul class="credentials-list">
-                            ${(credenziali || []).length === 0 ? `
-                                <div class="empty-state" style="padding: 30px;">
-                                    <p>Nessuna credenziale salvata per questo cliente.</p>
-                                </div>
-                            ` : (credenziali || []).map(cred => renderCredentialItem(cred)).join('')}
+                            ${credenzialiClienteHtml}
                         </ul>
                     </div>
 
@@ -2078,7 +2185,7 @@
                     document.getElementById('progettoCliente').value = progetto.cliente_id || '';
                     document.getElementById('progettoStato').value = progetto.stato;
                     document.getElementById('progettoPercorso').value = progetto.percorso_cartella || '';
-                    document.getElementById('progettoNote').value = progetto.note || '';
+                    document.getElementById('progettoNote').value = await decrypt(progetto.note) || '';
                 }
             } else {
                 document.getElementById('formProgetto').reset();
@@ -2089,12 +2196,13 @@
 
         async function salvaProgetto() {
             const id = document.getElementById('progettoId').value;
+            const noteVal = document.getElementById('progettoNote').value;
             const data = {
                 nome: document.getElementById('progettoNome').value,
                 cliente_id: document.getElementById('progettoCliente').value || null,
                 stato: document.getElementById('progettoStato').value,
                 percorso_cartella: document.getElementById('progettoPercorso').value || null,
-                note: document.getElementById('progettoNote').value || null,
+                note: noteVal ? await encrypt(noteVal) : null,
                 updated_at: new Date().toISOString()
             };
 
@@ -2247,7 +2355,7 @@
                     document.getElementById('clienteNome').value = cliente.nome;
                     document.getElementById('clienteEmail').value = cliente.email || '';
                     document.getElementById('clienteTelefono').value = cliente.telefono || '';
-                    document.getElementById('clienteNote').value = cliente.note || '';
+                    document.getElementById('clienteNote').value = await decrypt(cliente.note) || '';
                 }
             } else {
                 document.getElementById('formCliente').reset();
@@ -2258,11 +2366,12 @@
 
         async function salvaCliente() {
             const id = document.getElementById('clienteId').value;
+            const noteVal = document.getElementById('clienteNote').value;
             const data = {
                 nome: document.getElementById('clienteNome').value,
                 email: document.getElementById('clienteEmail').value || null,
                 telefono: document.getElementById('clienteTelefono').value || null,
-                note: document.getElementById('clienteNote').value || null
+                note: noteVal ? await encrypt(noteVal) : null
             };
 
             try {
@@ -2349,10 +2458,11 @@
                     document.getElementById('credenzialeProgettoId').value = cred.progetto_id || '';
                     document.getElementById('credenzialeClienteId').value = cred.cliente_id || '';
                     document.getElementById('credenzialeNome').value = cred.nome_servizio;
-                    document.getElementById('credenzialeUrl').value = cred.url || '';
-                    document.getElementById('credenzialeUsername').value = cred.username || '';
-                    document.getElementById('credenzialePassword').value = cred.password || '';
-                    document.getElementById('credenzialeNote').value = cred.note || '';
+                    // Decripta i dati sensibili
+                    document.getElementById('credenzialeUrl').value = await decrypt(cred.url) || '';
+                    document.getElementById('credenzialeUsername').value = await decrypt(cred.username) || '';
+                    document.getElementById('credenzialePassword').value = await decrypt(cred.password) || '';
+                    document.getElementById('credenzialeNote').value = await decrypt(cred.note) || '';
                 } catch (error) {
                     showToast('Errore: ' + error.message, 'error');
                     return;
@@ -2373,12 +2483,18 @@
             const progettoId = document.getElementById('credenzialeProgettoId').value;
             const clienteId = document.getElementById('credenzialeClienteId').value;
 
+            // Cripta i dati sensibili
+            const urlVal = document.getElementById('credenzialeUrl').value;
+            const userVal = document.getElementById('credenzialeUsername').value;
+            const passVal = document.getElementById('credenzialePassword').value;
+            const noteVal = document.getElementById('credenzialeNote').value;
+
             const data = {
                 nome_servizio: document.getElementById('credenzialeNome').value,
-                url: document.getElementById('credenzialeUrl').value || null,
-                username: document.getElementById('credenzialeUsername').value || null,
-                password: document.getElementById('credenzialePassword').value || null,
-                note: document.getElementById('credenzialeNote').value || null
+                url: urlVal ? await encrypt(urlVal) : null,
+                username: userVal ? await encrypt(userVal) : null,
+                password: passVal ? await encrypt(passVal) : null,
+                note: noteVal ? await encrypt(noteVal) : null
             };
 
             if (progettoId) {
