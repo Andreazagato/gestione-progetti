@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Progetti</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            margin-bottom: 10px;
+            color: #1a1a2e;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .login-box .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: #4361ee;
+        }
+
+        .login-box .btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+        }
+
+        .login-error {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        /* Layout */
+        .app-container {
+            display: none;
+            height: 100vh;
+        }
+
+        .app-container.active {
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #1a1a2e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #2d2d44;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #2d2d44;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .search-box::placeholder {
+            color: #888;
+        }
+
+        .sidebar-nav {
+            padding: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #2d2d44;
+        }
+
+        .nav-item span {
+            margin-left: 10px;
+        }
+
+        .nav-item .count {
+            margin-left: auto;
+            background: #4a4a6a;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .sidebar-section {
+            padding: 15px;
+            border-top: 1px solid #2d2d44;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 15px;
+            border-top: 1px solid #2d2d44;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .main-header {
+            padding: 20px 30px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4361ee;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3651d4;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Projects Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid #4361ee;
+        }
+
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .project-card.stato-in_pausa {
+            border-left-color: #f39c12;
+        }
+
+        .project-card.stato-completato {
+            border-left-color: #27ae60;
+        }
+
+        .project-card.stato-archiviato {
+            border-left-color: #95a5a6;
+            opacity: 0.7;
+        }
+
+        .project-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .project-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .project-card .cliente {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .project-card .stato-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .stato-badge.attivo { background: #e3f2fd; color: #1976d2; }
+        .stato-badge.in_pausa { background: #fff3e0; color: #f57c00; }
+        .stato-badge.completato { background: #e8f5e9; color: #388e3c; }
+        .stato-badge.archiviato { background: #f5f5f5; color: #757575; }
+
+        .project-card .percorso {
+            font-size: 0.8rem;
+            color: #888;
+            margin: 10px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+
+        .project-card .task-summary {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+        }
+
+        .task-summary span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Project Detail View */
+        .project-detail {
+            display: none;
+        }
+
+        .project-detail.active {
+            display: block;
+        }
+
+        .detail-header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .detail-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .detail-header h2 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .detail-header .cliente-info {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .detail-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 0.95rem;
+        }
+
+        .info-item .value.percorso {
+            word-break: break-all;
+            cursor: pointer;
+            color: #4361ee;
+        }
+
+        .info-item .value.percorso:hover {
+            text-decoration: underline;
+        }
+
+        /* Notes Section */
+        .notes-section, .credentials-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .notes-section h3, .credentials-section h3 {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notes-content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .notes-content:empty::before {
+            content: "Nessuna nota";
+            color: #999;
+            font-style: italic;
+        }
+
+        /* Credentials List */
+        .credentials-list {
+            list-style: none;
+        }
+
+        .credential-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .credential-item:hover {
+            border-color: #ddd;
+            background: #fafafa;
+        }
+
+        .credential-icon {
+            width: 40px;
+            height: 40px;
+            background: #4361ee;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+
+        .credential-content {
+            flex: 1;
+        }
+
+        .credential-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .credential-details {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .credential-details span {
+            margin-right: 15px;
+        }
+
+        .credential-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .credential-actions button {
+            padding: 8px 12px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .credential-actions button:hover {
+            background: #e0e0e0;
+        }
+
+        .credential-actions button.copy-btn {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .password-field {
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+
+        /* Tasks Section */
+        .tasks-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .tasks-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .task-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .task-filter {
+            padding: 8px 16px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .task-filter.active {
+            background: #4361ee;
+            color: white;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            border-color: #ddd;
+            background: #fafafa;
+        }
+
+        .task-item.completato {
+            opacity: 0.6;
+        }
+
+        .task-item.completato .task-title {
+            text-decoration: line-through;
+        }
+
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            margin-right: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .task-checkbox:hover {
+            border-color: #4361ee;
+        }
+
+        .task-item.completato .task-checkbox {
+            background: #27ae60;
+            border-color: #27ae60;
+            color: white;
+        }
+
+        .task-item.in_corso .task-checkbox {
+            background: #f39c12;
+            border-color: #f39c12;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .task-description {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .task-priority {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .priority-1 { background: #ffebee; color: #c62828; }
+        .priority-2 { background: #fff3e0; color: #ef6c00; }
+        .priority-3 { background: #e8f5e9; color: #2e7d32; }
+
+        .task-status-select {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .task-actions button {
+            padding: 5px 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .task-actions button:hover {
+            color: #333;
+        }
+
+        /* Clienti View */
+        .clienti-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .cliente-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .cliente-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .cliente-card .info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .cliente-card .progetti-count {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .cliente-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4361ee;
+        }
+
+        .form-group .password-input-wrapper {
+            position: relative;
+        }
+
+        .form-group .password-input-wrapper input {
+            padding-right: 45px;
+        }
+
+        .form-group .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: #888;
+        }
+
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin-top: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { background: #27ae60; }
+        .toast.error { background: #e74c3c; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                height: 100%;
+                z-index: 100;
+                transition: left 0.3s;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .main-content {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>🔐 Gestione Progetti</h1>
+            <p id="loginSubtitle">Inserisci la password per accedere</p>
+            <div class="login-error" id="loginError">Password errata</div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                </div>
+                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                    <input type="password" id="confirmPassword" placeholder="Conferma password">
+                </div>
+                <button type="submit" class="btn btn-primary" id="loginBtn">Accedi</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="appContainer">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>📋 Gestione Progetti</h1>
+                <input type="text" class="search-box" placeholder="Cerca progetti..." id="searchBox">
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-view="progetti">
+                    <span>📁</span>
+                    <span>Tutti i Progetti</span>
+                    <span class="count" id="countProgetti">0</span>
+                </div>
+                <div class="nav-item" data-view="attivi">
+                    <span>🔵</span>
+                    <span>Attivi</span>
+                    <span class="count" id="countAttivi">0</span>
+                </div>
+                <div class="nav-item" data-view="in_pausa">
+                    <span>🟡</span>
+                    <span>In Pausa</span>
+                    <span class="count" id="countPausa">0</span>
+                </div>
+                <div class="nav-item" data-view="completati">
+                    <span>🟢</span>
+                    <span>Completati</span>
+                    <span class="count" id="countCompletati">0</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-section">
+                <h3>Gestione</h3>
+                <div class="nav-item" data-view="clienti">
+                    <span>👥</span>
+                    <span>Clienti</span>
+                    <span class="count" id="countClienti">0</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="logout()">🚪 Esci</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h2 id="viewTitle">Tutti i Progetti</h2>
+                <div>
+                    <button class="btn btn-primary" id="btnNuovo">+ Nuovo Progetto</button>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <!-- Projects List View -->
+                <div id="projectsView" class="view-content">
+                    <div class="projects-grid" id="projectsGrid">
+                        <div class="loading">Caricamento...</div>
+                    </div>
+                </div>
+
+                <!-- Project Detail View -->
+                <div id="projectDetailView" class="project-detail">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Clienti View -->
+                <div id="clientiView" class="view-content" style="display: none;">
+                    <div class="clienti-grid" id="clientiGrid">
+                        <div class="loading">Caricamento...</div>
+                    </div>
+                </div>
+
+                <!-- Cliente Detail View -->
+                <div id="clienteDetailView" class="project-detail">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Nuovo/Modifica Progetto -->
+    <div class="modal-overlay" id="modalProgetto">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalProgettoTitle">Nuovo Progetto</h3>
+                <button class="modal-close" onclick="closeModal('modalProgetto')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formProgetto">
+                    <input type="hidden" id="progettoId">
+                    <div class="form-group">
+                        <label>Nome Progetto *</label>
+                        <input type="text" id="progettoNome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <select id="progettoCliente">
+                            <option value="">-- Nessun cliente --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stato</label>
+                        <select id="progettoStato">
+                            <option value="attivo">Attivo</option>
+                            <option value="in_pausa">In Pausa</option>
+                            <option value="completato">Completato</option>
+                            <option value="archiviato">Archiviato</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Percorso Cartella</label>
+                        <input type="text" id="progettoPercorso" placeholder="Es: C:\Progetti\NomeProgetto">
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea id="progettoNote" placeholder="Informazioni importanti, appunti, riferimenti..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalProgetto')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaProgetto()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuovo/Modifica Task -->
+    <div class="modal-overlay" id="modalTask">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTaskTitle">Nuovo Task</h3>
+                <button class="modal-close" onclick="closeModal('modalTask')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formTask">
+                    <input type="hidden" id="taskId">
+                    <input type="hidden" id="taskProgettoId">
+                    <div class="form-group">
+                        <label>Titolo *</label>
+                        <input type="text" id="taskTitolo" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrizione</label>
+                        <textarea id="taskDescrizione" placeholder="Dettagli del task..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Priorità</label>
+                        <select id="taskPriorita">
+                            <option value="1">Alta</option>
+                            <option value="2" selected>Media</option>
+                            <option value="3">Bassa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stato</label>
+                        <select id="taskStato">
+                            <option value="da_fare">Da fare</option>
+                            <option value="in_corso">In corso</option>
+                            <option value="completato">Completato</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalTask')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaTask()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuovo/Modifica Cliente -->
+    <div class="modal-overlay" id="modalCliente">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalClienteTitle">Nuovo Cliente</h3>
+                <button class="modal-close" onclick="closeModal('modalCliente')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formCliente">
+                    <input type="hidden" id="clienteId">
+                    <div class="form-group">
+                        <label>Nome *</label>
+                        <input type="text" id="clienteNome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="clienteEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefono</label>
+                        <input type="text" id="clienteTelefono">
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea id="clienteNote" placeholder="Note sul cliente..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalCliente')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaCliente()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuova/Modifica Credenziale -->
+    <div class="modal-overlay" id="modalCredenziale">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalCredenzialeTitle">Nuova Credenziale</h3>
+                <button class="modal-close" onclick="closeModal('modalCredenziale')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formCredenziale">
+                    <input type="hidden" id="credenzialeId">
+                    <input type="hidden" id="credenzialeProgettoId">
+                    <input type="hidden" id="credenzialeClienteId">
+                    <div class="form-group">
+                        <label>Nome Servizio *</label>
+                        <input type="text" id="credenzialeNome" placeholder="Es: Hosting, FTP, CPanel, WordPress..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>URL</label>
+                        <input type="text" id="credenzialeUrl" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="credenzialeUsername">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="credenzialePassword">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('credenzialePassword', this)">👁️</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea id="credenzialeNote" placeholder="Note aggiuntive..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalCredenziale')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaCredenziale()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuova Attività Cliente -->
+    <div class="modal-overlay" id="modalAttivita">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalAttivitaTitle">Nuova Attività</h3>
+                <button class="modal-close" onclick="closeModal('modalAttivita')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formAttivita">
+                    <input type="hidden" id="attivitaId">
+                    <input type="hidden" id="attivitaClienteId">
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="attivitaData" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrizione Attività *</label>
+                        <textarea id="attivitaDescrizione" placeholder="Descrivi l'attività svolta, chiamata, email, incontro..." required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalAttivita')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaAttivita()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // Configurazione Supabase
+        const SUPABASE_URL = 'https://ppvejdsvtesojnbqhjdc.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwdmVqZHN2dGVzb2puYnFoamRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMTU2MDYsImV4cCI6MjA4NTY5MTYwNn0.m-IS4OAMwIxWXAwhivuzOzw5EQ99abVyQLS-fKowNhs';
+
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Stato applicazione
+        let progetti = [];
+        let clienti = [];
+        let currentView = 'progetti';
+        let currentProjectId = null;
+        let currentClienteId = null;
+        let currentFilter = 'tutti';
+        let isFirstAccess = false;
+
+        // ==================== LOGIN ====================
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('loginPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorEl = document.getElementById('loginError');
+
+            if (isFirstAccess) {
+                // Prima configurazione
+                if (password !== confirmPassword) {
+                    errorEl.textContent = 'Le password non corrispondono';
+                    errorEl.classList.add('show');
+                    return;
+                }
+                if (password.length < 4) {
+                    errorEl.textContent = 'La password deve avere almeno 4 caratteri';
+                    errorEl.classList.add('show');
+                    return;
+                }
+
+                try {
+                    const hash = await hashPassword(password);
+                    const { error } = await db
+                        .from('app_settings')
+                        .insert([{ id: 1, password_hash: hash }]);
+
+                    if (error) throw error;
+
+                    sessionStorage.setItem('authenticated', 'true');
+                    showApp();
+                } catch (error) {
+                    errorEl.textContent = 'Errore: ' + error.message;
+                    errorEl.classList.add('show');
+                }
+            } else {
+                // Login normale
+                try {
+                    const { data, error } = await db
+                        .from('app_settings')
+                        .select('password_hash')
+                        .eq('id', 1)
+                        .single();
+
+                    if (error) throw error;
+
+                    const hash = await hashPassword(password);
+                    if (hash === data.password_hash) {
+                        sessionStorage.setItem('authenticated', 'true');
+                        showApp();
+                    } else {
+                        errorEl.textContent = 'Password errata';
+                        errorEl.classList.add('show');
+                    }
+                } catch (error) {
+                    errorEl.textContent = 'Errore: ' + error.message;
+                    errorEl.classList.add('show');
+                }
+            }
+        });
+
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function checkAuth() {
+            // Verifica se esiste già una password
+            try {
+                const { data, error, count } = await db
+                    .from('app_settings')
+                    .select('id', { count: 'exact' });
+
+                console.log('checkAuth result:', { data, error, count });
+
+                if (error) {
+                    console.error('Errore query:', error);
+                    enableFirstAccess();
+                } else if (!data || data.length === 0) {
+                    // Nessuna password configurata - prima configurazione
+                    console.log('Prima configurazione - nessuna password trovata');
+                    enableFirstAccess();
+                } else {
+                    console.log('Password esistente trovata');
+                }
+            } catch (error) {
+                console.error('Eccezione:', error);
+                enableFirstAccess();
+            }
+
+            // Verifica sessione
+            if (sessionStorage.getItem('authenticated') === 'true') {
+                showApp();
+            }
+        }
+
+        function enableFirstAccess() {
+            isFirstAccess = true;
+            document.getElementById('loginSubtitle').textContent = 'Configura una password per proteggere i tuoi dati';
+            document.getElementById('confirmPasswordGroup').style.display = 'block';
+            document.getElementById('loginBtn').textContent = 'Configura Password';
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+            initApp();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('authenticated');
+            location.reload();
+        }
+
+        // ==================== INIT ====================
+
+        async function initApp() {
+            await loadClienti();
+            await loadProgetti();
+            setupEventListeners();
+        }
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Navigazione sidebar
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const view = item.dataset.view;
+                    navigateTo(view);
+                });
+            });
+
+            // Bottone nuovo
+            document.getElementById('btnNuovo').addEventListener('click', () => {
+                if (currentView === 'clienti') {
+                    openModalCliente();
+                } else {
+                    openModalProgetto();
+                }
+            });
+
+            // Ricerca
+            document.getElementById('searchBox').addEventListener('input', (e) => {
+                filterProgetti(e.target.value);
+            });
+        }
+
+        // Navigazione
+        function navigateTo(view) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.view === view);
+            });
+
+            currentView = view;
+
+            const btnNuovo = document.getElementById('btnNuovo');
+            const viewTitle = document.getElementById('viewTitle');
+
+            document.getElementById('projectsView').style.display = 'none';
+            document.getElementById('projectDetailView').classList.remove('active');
+            document.getElementById('clientiView').style.display = 'none';
+            document.getElementById('clienteDetailView').classList.remove('active');
+
+            if (view === 'clienti') {
+                viewTitle.textContent = 'Clienti';
+                btnNuovo.textContent = '+ Nuovo Cliente';
+                document.getElementById('clientiView').style.display = 'block';
+                renderClienti();
+            } else {
+                btnNuovo.textContent = '+ Nuovo Progetto';
+                document.getElementById('projectsView').style.display = 'block';
+
+                switch(view) {
+                    case 'progetti':
+                        viewTitle.textContent = 'Tutti i Progetti';
+                        currentFilter = 'tutti';
+                        break;
+                    case 'attivi':
+                        viewTitle.textContent = 'Progetti Attivi';
+                        currentFilter = 'attivo';
+                        break;
+                    case 'in_pausa':
+                        viewTitle.textContent = 'Progetti in Pausa';
+                        currentFilter = 'in_pausa';
+                        break;
+                    case 'completati':
+                        viewTitle.textContent = 'Progetti Completati';
+                        currentFilter = 'completato';
+                        break;
+                }
+                renderProgetti();
+            }
+        }
+
+        // Caricamento dati
+        async function loadProgetti() {
+            try {
+                const { data, error } = await db
+                    .from('progetti')
+                    .select(`
+                        *,
+                        clienti (id, nome),
+                        task (id, stato)
+                    `)
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+                progetti = data || [];
+                updateCounts();
+                renderProgetti();
+            } catch (error) {
+                showToast('Errore nel caricamento progetti: ' + error.message, 'error');
+            }
+        }
+
+        async function loadClienti() {
+            try {
+                const { data, error } = await db
+                    .from('clienti')
+                    .select('*')
+                    .order('nome');
+
+                if (error) throw error;
+                clienti = data || [];
+                updateClienteSelect();
+                document.getElementById('countClienti').textContent = clienti.length;
+            } catch (error) {
+                showToast('Errore nel caricamento clienti: ' + error.message, 'error');
+            }
+        }
+
+        // Aggiorna contatori
+        function updateCounts() {
+            const counts = {
+                total: progetti.length,
+                attivo: progetti.filter(p => p.stato === 'attivo').length,
+                in_pausa: progetti.filter(p => p.stato === 'in_pausa').length,
+                completato: progetti.filter(p => p.stato === 'completato').length
+            };
+
+            document.getElementById('countProgetti').textContent = counts.total;
+            document.getElementById('countAttivi').textContent = counts.attivo;
+            document.getElementById('countPausa').textContent = counts.in_pausa;
+            document.getElementById('countCompletati').textContent = counts.completato;
+        }
+
+        // Render progetti
+        function renderProgetti() {
+            const grid = document.getElementById('projectsGrid');
+            let filteredProgetti = progetti;
+
+            if (currentFilter !== 'tutti') {
+                filteredProgetti = progetti.filter(p => p.stato === currentFilter);
+            }
+
+            if (filteredProgetti.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nessun progetto</h3>
+                        <p>Crea il tuo primo progetto cliccando sul bottone "+ Nuovo Progetto"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredProgetti.map(progetto => {
+                const taskCounts = {
+                    da_fare: (progetto.task || []).filter(t => t.stato === 'da_fare').length,
+                    in_corso: (progetto.task || []).filter(t => t.stato === 'in_corso').length,
+                    completato: (progetto.task || []).filter(t => t.stato === 'completato').length
+                };
+
+                return `
+                    <div class="project-card stato-${progetto.stato}" onclick="openProject('${progetto.id}')">
+                        <div class="project-card-header">
+                            <div>
+                                <h3>${escapeHtml(progetto.nome)}</h3>
+                                <div class="cliente">${progetto.clienti ? escapeHtml(progetto.clienti.nome) : 'Nessun cliente'}</div>
+                            </div>
+                            <span class="stato-badge ${progetto.stato}">${formatStato(progetto.stato)}</span>
+                        </div>
+                        ${progetto.percorso_cartella ? `<div class="percorso">📁 ${escapeHtml(progetto.percorso_cartella)}</div>` : ''}
+                        <div class="task-summary">
+                            <span>📋 ${taskCounts.da_fare} da fare</span>
+                            <span>🔄 ${taskCounts.in_corso} in corso</span>
+                            <span>✅ ${taskCounts.completato} completati</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filtra progetti per ricerca
+        function filterProgetti(query) {
+            const grid = document.getElementById('projectsGrid');
+            const q = query.toLowerCase();
+
+            const filtered = progetti.filter(p =>
+                p.nome.toLowerCase().includes(q) ||
+                (p.clienti && p.clienti.nome.toLowerCase().includes(q)) ||
+                (p.note && p.note.toLowerCase().includes(q))
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nessun risultato</h3>
+                        <p>Nessun progetto corrisponde alla ricerca "${escapeHtml(query)}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(progetto => {
+                const taskCounts = {
+                    da_fare: (progetto.task || []).filter(t => t.stato === 'da_fare').length,
+                    in_corso: (progetto.task || []).filter(t => t.stato === 'in_corso').length,
+                    completato: (progetto.task || []).filter(t => t.stato === 'completato').length
+                };
+
+                return `
+                    <div class="project-card stato-${progetto.stato}" onclick="openProject('${progetto.id}')">
+                        <div class="project-card-header">
+                            <div>
+                                <h3>${escapeHtml(progetto.nome)}</h3>
+                                <div class="cliente">${progetto.clienti ? escapeHtml(progetto.clienti.nome) : 'Nessun cliente'}</div>
+                            </div>
+                            <span class="stato-badge ${progetto.stato}">${formatStato(progetto.stato)}</span>
+                        </div>
+                        ${progetto.percorso_cartella ? `<div class="percorso">📁 ${escapeHtml(progetto.percorso_cartella)}</div>` : ''}
+                        <div class="task-summary">
+                            <span>📋 ${taskCounts.da_fare} da fare</span>
+                            <span>🔄 ${taskCounts.in_corso} in corso</span>
+                            <span>✅ ${taskCounts.completato} completati</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Apri dettaglio progetto
+        async function openProject(id) {
+            currentProjectId = id;
+            currentClienteId = null;
+
+            try {
+                const { data: progetto, error } = await db
+                    .from('progetti')
+                    .select(`
+                        *,
+                        clienti (*),
+                        task (*)
+                    `)
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                // Carica credenziali del progetto
+                const { data: credenziali } = await db
+                    .from('credenziali')
+                    .select('*')
+                    .eq('progetto_id', id)
+                    .order('nome_servizio');
+
+                document.getElementById('projectsView').style.display = 'none';
+                document.getElementById('clientiView').style.display = 'none';
+                document.getElementById('clienteDetailView').classList.remove('active');
+
+                const detailView = document.getElementById('projectDetailView');
+                detailView.classList.add('active');
+
+                const tasks = progetto.task || [];
+                tasks.sort((a, b) => {
+                    const statoOrder = { 'in_corso': 0, 'da_fare': 1, 'completato': 2 };
+                    if (statoOrder[a.stato] !== statoOrder[b.stato]) {
+                        return statoOrder[a.stato] - statoOrder[b.stato];
+                    }
+                    return a.priorita - b.priorita;
+                });
+
+                detailView.innerHTML = `
+                    <div class="detail-header">
+                        <div class="detail-header-top">
+                            <div>
+                                <button class="btn btn-secondary btn-small" onclick="backToList()">← Torna alla lista</button>
+                                <h2 style="margin-top: 15px;">${escapeHtml(progetto.nome)}</h2>
+                                <div class="cliente-info">
+                                    ${progetto.clienti ? `👤 ${escapeHtml(progetto.clienti.nome)}` : 'Nessun cliente associato'}
+                                </div>
+                            </div>
+                            <div class="detail-actions">
+                                <button class="btn btn-secondary" onclick="openModalProgetto('${progetto.id}')">✏️ Modifica</button>
+                                <button class="btn btn-danger" onclick="eliminaProgetto('${progetto.id}')">🗑️ Elimina</button>
+                            </div>
+                        </div>
+                        <div class="detail-info-grid">
+                            <div class="info-item">
+                                <label>Stato</label>
+                                <div class="value">
+                                    <span class="stato-badge ${progetto.stato}">${formatStato(progetto.stato)}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <label>Percorso Cartella</label>
+                                <div class="value ${progetto.percorso_cartella ? 'percorso' : ''}"
+                                     ${progetto.percorso_cartella ? `onclick="apriCartella('${escapeHtml(progetto.percorso_cartella)}')"` : ''}>
+                                    ${progetto.percorso_cartella ? '📁 ' + escapeHtml(progetto.percorso_cartella) : 'Non specificato'}
+                                </div>
+                            </div>
+                            ${progetto.clienti ? `
+                            <div class="info-item">
+                                <label>Email Cliente</label>
+                                <div class="value">${progetto.clienti.email || 'Non specificata'}</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Telefono Cliente</label>
+                                <div class="value">${progetto.clienti.telefono || 'Non specificato'}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="notes-section">
+                        <h3>
+                            📝 Note e Informazioni
+                            <button class="btn btn-secondary btn-small" onclick="openModalProgetto('${progetto.id}')">Modifica</button>
+                        </h3>
+                        <div class="notes-content">${progetto.note ? escapeHtml(progetto.note) : ''}</div>
+                    </div>
+
+                    <div class="credentials-section">
+                        <h3>
+                            🔐 Credenziali (${(credenziali || []).length})
+                            <button class="btn btn-primary btn-small" onclick="openModalCredenziale('progetto', '${progetto.id}')">+ Aggiungi</button>
+                        </h3>
+                        <ul class="credentials-list">
+                            ${(credenziali || []).length === 0 ? `
+                                <div class="empty-state" style="padding: 30px;">
+                                    <p>Nessuna credenziale salvata per questo progetto.</p>
+                                </div>
+                            ` : (credenziali || []).map(cred => renderCredentialItem(cred)).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="tasks-section">
+                        <div class="tasks-header">
+                            <h3>✅ Task (${tasks.length})</h3>
+                            <button class="btn btn-primary btn-small" onclick="openModalTask()">+ Nuovo Task</button>
+                        </div>
+
+                        <div class="task-filters">
+                            <button class="task-filter active" onclick="filterTasks('tutti', this)">Tutti</button>
+                            <button class="task-filter" onclick="filterTasks('da_fare', this)">Da fare</button>
+                            <button class="task-filter" onclick="filterTasks('in_corso', this)">In corso</button>
+                            <button class="task-filter" onclick="filterTasks('completato', this)">Completati</button>
+                        </div>
+
+                        <ul class="task-list" id="taskList">
+                            ${tasks.length === 0 ? `
+                                <div class="empty-state">
+                                    <p>Nessun task. Aggiungi il primo task per questo progetto.</p>
+                                </div>
+                            ` : tasks.map(task => renderTaskItem(task)).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                document.getElementById('viewTitle').textContent = progetto.nome;
+
+            } catch (error) {
+                showToast('Errore nel caricamento del progetto: ' + error.message, 'error');
+            }
+        }
+
+        // Render credential item
+        function renderCredentialItem(cred) {
+            return `
+                <li class="credential-item">
+                    <div class="credential-icon">🔑</div>
+                    <div class="credential-content">
+                        <div class="credential-title">${escapeHtml(cred.nome_servizio)}</div>
+                        <div class="credential-details">
+                            ${cred.username ? `<span>👤 ${escapeHtml(cred.username)}</span>` : ''}
+                            ${cred.password ? `<span class="password-field">🔒 ••••••••</span>` : ''}
+                            ${cred.url ? `<span>🔗 <a href="${escapeHtml(cred.url)}" target="_blank">${escapeHtml(cred.url)}</a></span>` : ''}
+                        </div>
+                        ${cred.note ? `<div style="font-size: 0.8rem; color: #888; margin-top: 5px;">${escapeHtml(cred.note)}</div>` : ''}
+                    </div>
+                    <div class="credential-actions">
+                        ${cred.username ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(cred.username)}', 'Username')">📋 User</button>` : ''}
+                        ${cred.password ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(cred.password)}', 'Password')">📋 Pass</button>` : ''}
+                        <button onclick="openModalCredenziale('edit', '${cred.id}')">✏️</button>
+                        <button onclick="eliminaCredenziale('${cred.id}')">🗑️</button>
+                    </div>
+                </li>
+            `;
+        }
+
+        function copyToClipboard(text, label) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${label} copiato negli appunti!`, 'success');
+            });
+        }
+
+        function renderTaskItem(task) {
+            const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+            return `
+                <li class="task-item ${task.stato}" data-stato="${task.stato}">
+                    <div class="task-checkbox" onclick="toggleTaskStatus('${task.id}', '${task.stato}')">
+                        ${task.stato === 'completato' ? '✓' : task.stato === 'in_corso' ? '◐' : ''}
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title">${escapeHtml(task.titolo)}</div>
+                        ${task.descrizione ? `<div class="task-description">${escapeHtml(task.descrizione)}</div>` : ''}
+                        <div class="task-meta">
+                            <span class="task-priority priority-${task.priorita}">Priorità: ${priorityLabels[task.priorita]}</span>
+                            <select class="task-status-select" onchange="changeTaskStatus('${task.id}', this.value)">
+                                <option value="da_fare" ${task.stato === 'da_fare' ? 'selected' : ''}>Da fare</option>
+                                <option value="in_corso" ${task.stato === 'in_corso' ? 'selected' : ''}>In corso</option>
+                                <option value="completato" ${task.stato === 'completato' ? 'selected' : ''}>Completato</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <button onclick="openModalTask('${task.id}')" title="Modifica">✏️</button>
+                        <button onclick="eliminaTask('${task.id}')" title="Elimina">🗑️</button>
+                    </div>
+                </li>
+            `;
+        }
+
+        function filterTasks(stato, btn) {
+            document.querySelectorAll('.task-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            document.querySelectorAll('.task-item').forEach(item => {
+                if (stato === 'tutti' || item.dataset.stato === stato) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        async function toggleTaskStatus(id, currentStato) {
+            const newStato = currentStato === 'completato' ? 'da_fare' :
+                            currentStato === 'da_fare' ? 'in_corso' : 'completato';
+            await changeTaskStatus(id, newStato);
+        }
+
+        async function changeTaskStatus(id, newStato) {
+            try {
+                const updateData = { stato: newStato };
+                if (newStato === 'completato') {
+                    updateData.completed_at = new Date().toISOString();
+                } else {
+                    updateData.completed_at = null;
+                }
+
+                const { error } = await db
+                    .from('task')
+                    .update(updateData)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await openProject(currentProjectId);
+                showToast('Stato task aggiornato', 'success');
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        function backToList() {
+            document.getElementById('projectDetailView').classList.remove('active');
+            document.getElementById('clienteDetailView').classList.remove('active');
+            currentProjectId = null;
+            currentClienteId = null;
+            navigateTo(currentView);
+        }
+
+        function apriCartella(percorso) {
+            navigator.clipboard.writeText(percorso).then(() => {
+                showToast('Percorso copiato negli appunti!', 'success');
+            });
+        }
+
+        // Render clienti
+        function renderClienti() {
+            const grid = document.getElementById('clientiGrid');
+
+            if (clienti.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nessun cliente</h3>
+                        <p>Aggiungi il tuo primo cliente cliccando su "+ Nuovo Cliente"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = clienti.map(cliente => {
+                const progettiCliente = progetti.filter(p => p.cliente_id === cliente.id);
+                return `
+                    <div class="cliente-card" onclick="openCliente('${cliente.id}')" style="cursor: pointer;">
+                        <h3>${escapeHtml(cliente.nome)}</h3>
+                        ${cliente.email ? `<div class="info">📧 ${escapeHtml(cliente.email)}</div>` : ''}
+                        ${cliente.telefono ? `<div class="info">📞 ${escapeHtml(cliente.telefono)}</div>` : ''}
+                        ${cliente.note ? `<div class="info" style="margin-top: 10px; color: #888;">${escapeHtml(cliente.note)}</div>` : ''}
+                        <div class="progetti-count">📁 ${progettiCliente.length} progett${progettiCliente.length === 1 ? 'o' : 'i'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Apri dettaglio cliente
+        async function openCliente(id) {
+            currentClienteId = id;
+            currentProjectId = null;
+
+            try {
+                const cliente = clienti.find(c => c.id === id);
+                if (!cliente) throw new Error('Cliente non trovato');
+
+                // Carica credenziali del cliente
+                const { data: credenziali } = await db
+                    .from('credenziali')
+                    .select('*')
+                    .eq('cliente_id', id)
+                    .order('nome_servizio');
+
+                // Carica storico attività del cliente
+                const { data: attivita } = await db
+                    .from('attivita_cliente')
+                    .select('*')
+                    .eq('cliente_id', id)
+                    .order('data', { ascending: false });
+
+                const progettiCliente = progetti.filter(p => p.cliente_id === id);
+
+                document.getElementById('projectsView').style.display = 'none';
+                document.getElementById('clientiView').style.display = 'none';
+                document.getElementById('projectDetailView').classList.remove('active');
+
+                const detailView = document.getElementById('clienteDetailView');
+                detailView.classList.add('active');
+
+                detailView.innerHTML = `
+                    <div class="detail-header">
+                        <div class="detail-header-top">
+                            <div>
+                                <button class="btn btn-secondary btn-small" onclick="backToList()">← Torna alla lista</button>
+                                <h2 style="margin-top: 15px;">👤 ${escapeHtml(cliente.nome)}</h2>
+                            </div>
+                            <div class="detail-actions">
+                                <button class="btn btn-secondary" onclick="openModalCliente('${cliente.id}')">✏️ Modifica</button>
+                                <button class="btn btn-danger" onclick="eliminaCliente('${cliente.id}')">🗑️ Elimina</button>
+                            </div>
+                        </div>
+                        <div class="detail-info-grid">
+                            ${cliente.email ? `
+                            <div class="info-item">
+                                <label>Email</label>
+                                <div class="value">${escapeHtml(cliente.email)}</div>
+                            </div>
+                            ` : ''}
+                            ${cliente.telefono ? `
+                            <div class="info-item">
+                                <label>Telefono</label>
+                                <div class="value">${escapeHtml(cliente.telefono)}</div>
+                            </div>
+                            ` : ''}
+                            <div class="info-item">
+                                <label>Progetti</label>
+                                <div class="value">${progettiCliente.length} progett${progettiCliente.length === 1 ? 'o' : 'i'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${cliente.note ? `
+                    <div class="notes-section">
+                        <h3>📝 Note</h3>
+                        <div class="notes-content">${escapeHtml(cliente.note)}</div>
+                    </div>
+                    ` : ''}
+
+                    <div class="credentials-section">
+                        <h3>
+                            🔐 Credenziali Cliente (${(credenziali || []).length})
+                            <button class="btn btn-primary btn-small" onclick="openModalCredenziale('cliente', '${cliente.id}')">+ Aggiungi</button>
+                        </h3>
+                        <ul class="credentials-list">
+                            ${(credenziali || []).length === 0 ? `
+                                <div class="empty-state" style="padding: 30px;">
+                                    <p>Nessuna credenziale salvata per questo cliente.</p>
+                                </div>
+                            ` : (credenziali || []).map(cred => renderCredentialItem(cred)).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="credentials-section">
+                        <h3>
+                            📅 Storico Attività (${(attivita || []).length})
+                            <button class="btn btn-primary btn-small" onclick="openModalAttivita()">+ Aggiungi</button>
+                        </h3>
+                        <ul class="credentials-list">
+                            ${(attivita || []).length === 0 ? `
+                                <div class="empty-state" style="padding: 30px;">
+                                    <p>Nessuna attività registrata per questo cliente.</p>
+                                </div>
+                            ` : (attivita || []).map(att => renderAttivitaItem(att)).join('')}
+                        </ul>
+                    </div>
+
+                    ${progettiCliente.length > 0 ? `
+                    <div class="tasks-section">
+                        <h3>📁 Progetti del Cliente</h3>
+                        <div class="projects-grid" style="margin-top: 15px;">
+                            ${progettiCliente.map(progetto => `
+                                <div class="project-card stato-${progetto.stato}" onclick="openProject('${progetto.id}')" style="margin-bottom: 0;">
+                                    <div class="project-card-header">
+                                        <h3>${escapeHtml(progetto.nome)}</h3>
+                                        <span class="stato-badge ${progetto.stato}">${formatStato(progetto.stato)}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+
+                document.getElementById('viewTitle').textContent = cliente.nome;
+
+            } catch (error) {
+                showToast('Errore nel caricamento del cliente: ' + error.message, 'error');
+            }
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        function updateClienteSelect() {
+            const select = document.getElementById('progettoCliente');
+            select.innerHTML = '<option value="">-- Nessun cliente --</option>' +
+                clienti.map(c => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+        }
+
+        // Progetto modal
+        async function openModalProgetto(id = null) {
+            document.getElementById('modalProgettoTitle').textContent = id ? 'Modifica Progetto' : 'Nuovo Progetto';
+            document.getElementById('progettoId').value = id || '';
+
+            if (id) {
+                const progetto = progetti.find(p => p.id === id);
+                if (progetto) {
+                    document.getElementById('progettoNome').value = progetto.nome;
+                    document.getElementById('progettoCliente').value = progetto.cliente_id || '';
+                    document.getElementById('progettoStato').value = progetto.stato;
+                    document.getElementById('progettoPercorso').value = progetto.percorso_cartella || '';
+                    document.getElementById('progettoNote').value = progetto.note || '';
+                }
+            } else {
+                document.getElementById('formProgetto').reset();
+            }
+
+            openModal('modalProgetto');
+        }
+
+        async function salvaProgetto() {
+            const id = document.getElementById('progettoId').value;
+            const data = {
+                nome: document.getElementById('progettoNome').value,
+                cliente_id: document.getElementById('progettoCliente').value || null,
+                stato: document.getElementById('progettoStato').value,
+                percorso_cartella: document.getElementById('progettoPercorso').value || null,
+                note: document.getElementById('progettoNote').value || null,
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('progetti')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Progetto aggiornato!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('progetti')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Progetto creato!', 'success');
+                }
+
+                closeModal('modalProgetto');
+                await loadProgetti();
+
+                if (currentProjectId === id) {
+                    await openProject(id);
+                }
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaProgetto(id) {
+            if (!confirm('Sei sicuro di voler eliminare questo progetto? Tutti i task e le credenziali associati verranno eliminati.')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('progetti')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Progetto eliminato', 'success');
+                backToList();
+                await loadProgetti();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        // Task modal
+        async function openModalTask(id = null) {
+            document.getElementById('modalTaskTitle').textContent = id ? 'Modifica Task' : 'Nuovo Task';
+            document.getElementById('taskId').value = id || '';
+            document.getElementById('taskProgettoId').value = currentProjectId;
+
+            if (id) {
+                try {
+                    const { data: task, error } = await db
+                        .from('task')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    document.getElementById('taskTitolo').value = task.titolo;
+                    document.getElementById('taskDescrizione').value = task.descrizione || '';
+                    document.getElementById('taskPriorita').value = task.priorita;
+                    document.getElementById('taskStato').value = task.stato;
+                } catch (error) {
+                    showToast('Errore: ' + error.message, 'error');
+                    return;
+                }
+            } else {
+                document.getElementById('formTask').reset();
+                document.getElementById('taskPriorita').value = '2';
+                document.getElementById('taskStato').value = 'da_fare';
+            }
+
+            openModal('modalTask');
+        }
+
+        async function salvaTask() {
+            const id = document.getElementById('taskId').value;
+            const data = {
+                progetto_id: document.getElementById('taskProgettoId').value,
+                titolo: document.getElementById('taskTitolo').value,
+                descrizione: document.getElementById('taskDescrizione').value || null,
+                priorita: parseInt(document.getElementById('taskPriorita').value),
+                stato: document.getElementById('taskStato').value
+            };
+
+            if (data.stato === 'completato') {
+                data.completed_at = new Date().toISOString();
+            }
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('task')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Task aggiornato!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('task')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Task creato!', 'success');
+                }
+
+                closeModal('modalTask');
+                await openProject(currentProjectId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaTask(id) {
+            if (!confirm('Sei sicuro di voler eliminare questo task?')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('task')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Task eliminato', 'success');
+                await openProject(currentProjectId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        // Cliente modal
+        async function openModalCliente(id = null) {
+            document.getElementById('modalClienteTitle').textContent = id ? 'Modifica Cliente' : 'Nuovo Cliente';
+            document.getElementById('clienteId').value = id || '';
+
+            if (id) {
+                const cliente = clienti.find(c => c.id === id);
+                if (cliente) {
+                    document.getElementById('clienteNome').value = cliente.nome;
+                    document.getElementById('clienteEmail').value = cliente.email || '';
+                    document.getElementById('clienteTelefono').value = cliente.telefono || '';
+                    document.getElementById('clienteNote').value = cliente.note || '';
+                }
+            } else {
+                document.getElementById('formCliente').reset();
+            }
+
+            openModal('modalCliente');
+        }
+
+        async function salvaCliente() {
+            const id = document.getElementById('clienteId').value;
+            const data = {
+                nome: document.getElementById('clienteNome').value,
+                email: document.getElementById('clienteEmail').value || null,
+                telefono: document.getElementById('clienteTelefono').value || null,
+                note: document.getElementById('clienteNote').value || null
+            };
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('clienti')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Cliente aggiornato!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('clienti')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Cliente creato!', 'success');
+                }
+
+                closeModal('modalCliente');
+                await loadClienti();
+                await loadProgetti();
+
+                if (currentClienteId === id) {
+                    await openCliente(id);
+                } else {
+                    renderClienti();
+                }
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaCliente(id) {
+            const progettiAssociati = progetti.filter(p => p.cliente_id === id);
+            if (progettiAssociati.length > 0) {
+                if (!confirm(`Questo cliente ha ${progettiAssociati.length} progett${progettiAssociati.length === 1 ? 'o' : 'i'} associat${progettiAssociati.length === 1 ? 'o' : 'i'}. I progetti non verranno eliminati ma perderanno l'associazione. Continuare?`)) {
+                    return;
+                }
+            } else {
+                if (!confirm('Sei sicuro di voler eliminare questo cliente? Tutte le credenziali associate verranno eliminate.')) {
+                    return;
+                }
+            }
+
+            try {
+                const { error } = await db
+                    .from('clienti')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Cliente eliminato', 'success');
+                backToList();
+                await loadClienti();
+                await loadProgetti();
+                renderClienti();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        // Credenziale modal
+        async function openModalCredenziale(type, id) {
+            document.getElementById('formCredenziale').reset();
+            document.getElementById('credenzialeId').value = '';
+            document.getElementById('credenzialeProgettoId').value = '';
+            document.getElementById('credenzialeClienteId').value = '';
+            document.getElementById('credenzialePassword').type = 'password';
+
+            if (type === 'edit') {
+                // Modifica credenziale esistente
+                document.getElementById('modalCredenzialeTitle').textContent = 'Modifica Credenziale';
+                try {
+                    const { data: cred, error } = await db
+                        .from('credenziali')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    document.getElementById('credenzialeId').value = cred.id;
+                    document.getElementById('credenzialeProgettoId').value = cred.progetto_id || '';
+                    document.getElementById('credenzialeClienteId').value = cred.cliente_id || '';
+                    document.getElementById('credenzialeNome').value = cred.nome_servizio;
+                    document.getElementById('credenzialeUrl').value = cred.url || '';
+                    document.getElementById('credenzialeUsername').value = cred.username || '';
+                    document.getElementById('credenzialePassword').value = cred.password || '';
+                    document.getElementById('credenzialeNote').value = cred.note || '';
+                } catch (error) {
+                    showToast('Errore: ' + error.message, 'error');
+                    return;
+                }
+            } else if (type === 'progetto') {
+                document.getElementById('modalCredenzialeTitle').textContent = 'Nuova Credenziale Progetto';
+                document.getElementById('credenzialeProgettoId').value = id;
+            } else if (type === 'cliente') {
+                document.getElementById('modalCredenzialeTitle').textContent = 'Nuova Credenziale Cliente';
+                document.getElementById('credenzialeClienteId').value = id;
+            }
+
+            openModal('modalCredenziale');
+        }
+
+        async function salvaCredenziale() {
+            const id = document.getElementById('credenzialeId').value;
+            const progettoId = document.getElementById('credenzialeProgettoId').value;
+            const clienteId = document.getElementById('credenzialeClienteId').value;
+
+            const data = {
+                nome_servizio: document.getElementById('credenzialeNome').value,
+                url: document.getElementById('credenzialeUrl').value || null,
+                username: document.getElementById('credenzialeUsername').value || null,
+                password: document.getElementById('credenzialePassword').value || null,
+                note: document.getElementById('credenzialeNote').value || null
+            };
+
+            if (progettoId) {
+                data.progetto_id = progettoId;
+                data.cliente_id = null;
+            } else if (clienteId) {
+                data.cliente_id = clienteId;
+                data.progetto_id = null;
+            }
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('credenziali')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Credenziale aggiornata!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('credenziali')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Credenziale salvata!', 'success');
+                }
+
+                closeModal('modalCredenziale');
+
+                if (currentProjectId) {
+                    await openProject(currentProjectId);
+                } else if (currentClienteId) {
+                    await openCliente(currentClienteId);
+                }
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaCredenziale(id) {
+            if (!confirm('Sei sicuro di voler eliminare questa credenziale?')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('credenziali')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Credenziale eliminata', 'success');
+
+                if (currentProjectId) {
+                    await openProject(currentProjectId);
+                } else if (currentClienteId) {
+                    await openCliente(currentClienteId);
+                }
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        // Attività cliente functions
+        function renderAttivitaItem(att) {
+            const dataFormatted = new Date(att.data).toLocaleDateString('it-IT', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            return `
+                <li class="credential-item">
+                    <div class="credential-icon" style="background: #27ae60;">📅</div>
+                    <div class="credential-content">
+                        <div class="credential-title">${dataFormatted}</div>
+                        <div class="credential-details" style="white-space: pre-wrap;">${escapeHtml(att.descrizione)}</div>
+                    </div>
+                    <div class="credential-actions">
+                        <button onclick="openModalAttivita('${att.id}')">✏️</button>
+                        <button onclick="eliminaAttivita('${att.id}')">🗑️</button>
+                    </div>
+                </li>
+            `;
+        }
+
+        async function openModalAttivita(id = null) {
+            document.getElementById('modalAttivitaTitle').textContent = id ? 'Modifica Attività' : 'Nuova Attività';
+            document.getElementById('attivitaId').value = id || '';
+            document.getElementById('attivitaClienteId').value = currentClienteId;
+
+            if (id) {
+                try {
+                    const { data: att, error } = await db
+                        .from('attivita_cliente')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    document.getElementById('attivitaData').value = att.data;
+                    document.getElementById('attivitaDescrizione').value = att.descrizione;
+                } catch (error) {
+                    showToast('Errore: ' + error.message, 'error');
+                    return;
+                }
+            } else {
+                document.getElementById('formAttivita').reset();
+                // Imposta la data di oggi come default
+                document.getElementById('attivitaData').value = new Date().toISOString().split('T')[0];
+            }
+
+            openModal('modalAttivita');
+        }
+
+        async function salvaAttivita() {
+            const id = document.getElementById('attivitaId').value;
+            const clienteId = document.getElementById('attivitaClienteId').value;
+
+            const data = {
+                cliente_id: clienteId,
+                data: document.getElementById('attivitaData').value,
+                descrizione: document.getElementById('attivitaDescrizione').value
+            };
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('attivita_cliente')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Attività aggiornata!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('attivita_cliente')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Attività salvata!', 'success');
+                }
+
+                closeModal('modalAttivita');
+                await openCliente(currentClienteId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaAttivita(id) {
+            if (!confirm('Sei sicuro di voler eliminare questa attività?')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('attivita_cliente')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Attività eliminata', 'success');
+                await openCliente(currentClienteId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        // Utility functions
+        function formatStato(stato) {
+            const labels = {
+                'attivo': 'Attivo',
+                'in_pausa': 'In Pausa',
+                'completato': 'Completato',
+                'archiviato': 'Archiviato'
+            };
+            return labels[stato] || stato;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
