@@ -1469,6 +1469,38 @@
         </div>
     </div>
 
+    <!-- Modal Nuova Azione Successiva Progetto -->
+    <div class="modal-overlay" id="modalAzioneProgetto">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalAzioneProgettoTitle">Nuova Azione</h3>
+                <button class="modal-close" onclick="closeModal('modalAzioneProgetto')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formAzioneProgetto">
+                    <input type="hidden" id="azioneProgettoId">
+                    <input type="hidden" id="azioneProgettoProgettoId">
+                    <div class="form-group">
+                        <label>Descrizione *</label>
+                        <textarea id="azioneProgettoDescrizione" placeholder="Es: Aggiungere funzionalità X, Testare modulo Y, Chiedere conferma al cliente..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Priorità</label>
+                        <select id="azioneProgettoPriorita">
+                            <option value="1">Alta</option>
+                            <option value="2" selected>Media</option>
+                            <option value="3">Bassa</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalAzioneProgetto')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaAzioneProgetto()">Salva</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Nuova Azione Successiva Cliente -->
     <div class="modal-overlay" id="modalAzione">
         <div class="modal">
@@ -1547,6 +1579,7 @@
         let clienti = [];
         let taskGenerali = [];
         let azioniClienti = [];
+        let azioniProgetti = [];
         let allTasks = []; // Tutti i task per la dashboard
         let currentView = 'dashboard';
         let currentProjectId = null;
@@ -1757,6 +1790,7 @@
             await loadProgetti();
             await loadTaskGenerali();
             await loadAzioniClienti();
+            await loadAzioniProgettiDashboard();
             await loadAllTasks();
             setupEventListeners();
             navigateTo('dashboard'); // Mostra dashboard come prima schermata
@@ -2027,6 +2061,15 @@
                     .eq('progetto_id', id)
                     .order('nome_servizio');
 
+                // Carica azioni successive del progetto
+                const { data: azioniProgetto } = await db
+                    .from('azioni_progetto')
+                    .select('*')
+                    .eq('progetto_id', id)
+                    .eq('completata', false)
+                    .order('priorita')
+                    .order('created_at', { ascending: false });
+
                 document.getElementById('dashboardView').style.display = 'none';
                 document.getElementById('projectsView').style.display = 'none';
                 document.getElementById('clientiView').style.display = 'none';
@@ -2100,6 +2143,20 @@
                             <button class="btn btn-secondary btn-small" onclick="openModalProgetto('${progetto.id}')">Modifica</button>
                         </h3>
                         <div class="notes-content">${noteDecriptate ? escapeHtml(noteDecriptate) : ''}</div>
+                    </div>
+
+                    <div class="credentials-section" style="border-left: 4px solid #9b59b6;">
+                        <h3 style="color: #9b59b6;">
+                            💡 Azioni Successive (${(azioniProgetto || []).length})
+                            <button class="btn btn-primary btn-small" onclick="openModalAzioneProgetto()">+ Aggiungi</button>
+                        </h3>
+                        <ul class="credentials-list">
+                            ${(azioniProgetto || []).length === 0 ? `
+                                <div class="empty-state" style="padding: 30px;">
+                                    <p>Nessuna azione da fare per questo progetto.</p>
+                                </div>
+                            ` : (azioniProgetto || []).map(az => renderAzioneProgettoItem(az)).join('')}
+                        </ul>
                     </div>
 
                     <div class="credentials-section">
@@ -3049,6 +3106,25 @@
             }
         }
 
+        async function loadAzioniProgettiDashboard() {
+            try {
+                const { data, error } = await db
+                    .from('azioni_progetto')
+                    .select(`
+                        *,
+                        progetti (id, nome)
+                    `)
+                    .eq('completata', false)
+                    .order('priorita')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                azioniProgetti = data || [];
+            } catch (error) {
+                showToast('Errore caricamento azioni progetti: ' + error.message, 'error');
+            }
+        }
+
         function updateUrgentCount() {
             const oggi = new Date();
             oggi.setHours(0, 0, 0, 0);
@@ -3175,7 +3251,9 @@
             // Render azioni clienti
             renderAzioniDashboard();
 
-            // Nascondi sezioni vuote (tranne ritardo e oggi)
+            // Nascondi tutte le sezioni vuote
+            toggleEmptySection('dashboardRitardo', taskRitardo.length);
+            toggleEmptySection('dashboardOggi', taskOggi.length);
             toggleEmptySection('dashboardDomani', taskDomani.length);
             toggleEmptySection('dashboardSettimana', taskSettimana.length);
             toggleEmptySection('dashboardInCorso', taskInCorso.length);
@@ -3224,8 +3302,36 @@
 
         function renderAzioniDashboard() {
             const container = document.getElementById('dashboardAzioni');
+            const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+            const priorityClass = { 1: 'alta', 2: 'media', 3: 'bassa' };
 
-            if (azioniClienti.length === 0) {
+            // Combina azioni clienti e azioni progetti
+            const tutteAzioni = [];
+
+            // Azioni clienti
+            azioniClienti.forEach(azione => {
+                tutteAzioni.push({
+                    ...azione,
+                    tipo: 'cliente',
+                    riferimento: azione.clienti?.nome || 'Cliente',
+                    riferimentoId: azione.cliente_id
+                });
+            });
+
+            // Azioni progetti
+            azioniProgetti.forEach(azione => {
+                tutteAzioni.push({
+                    ...azione,
+                    tipo: 'progetto',
+                    riferimento: azione.progetti?.nome || 'Progetto',
+                    riferimentoId: azione.progetto_id
+                });
+            });
+
+            // Ordina per priorità
+            tutteAzioni.sort((a, b) => a.priorita - b.priorita);
+
+            if (tutteAzioni.length === 0) {
                 container.innerHTML = `<div class="dashboard-empty">Nessuna azione da fare</div>`;
                 const section = container.parentElement;
                 section.classList.add('hide-empty');
@@ -3234,24 +3340,47 @@
 
             container.parentElement.classList.remove('hide-empty');
 
-            container.innerHTML = azioniClienti.map(azione => {
-                const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
-                const priorityClass = { 1: 'alta', 2: 'media', 3: 'bassa' };
+            container.innerHTML = tutteAzioni.map(azione => {
+                const tagClass = azione.tipo === 'cliente' ? 'cliente-tag' : 'progetto-tag';
+                const tagIcon = azione.tipo === 'cliente' ? '👤' : '📁';
+                const onClickFn = azione.tipo === 'cliente'
+                    ? `openCliente('${azione.riferimentoId}')`
+                    : `openProject('${azione.riferimentoId}')`;
+                const completeFn = azione.tipo === 'cliente'
+                    ? `completeAzione('${azione.id}')`
+                    : `completeAzioneProgettoDashboard('${azione.id}')`;
 
                 return `
-                    <li class="dashboard-item" onclick="openCliente('${azione.cliente_id}')">
-                        <div class="dashboard-item-checkbox" onclick="event.stopPropagation(); completeAzione('${azione.id}')">
+                    <li class="dashboard-item" onclick="${onClickFn}">
+                        <div class="dashboard-item-checkbox" onclick="event.stopPropagation(); ${completeFn}">
                         </div>
                         <div class="dashboard-item-content">
                             <div class="dashboard-item-title">${escapeHtml(azione.descrizione)}</div>
                             <div class="dashboard-item-meta">
-                                <span class="cliente-tag">👤 ${escapeHtml(azione.clienti?.nome || 'Cliente')}</span>
+                                <span class="${tagClass}">${tagIcon} ${escapeHtml(azione.riferimento)}</span>
                                 <span class="priority-tag ${priorityClass[azione.priorita]}">${priorityLabels[azione.priorita]}</span>
                             </div>
                         </div>
                     </li>
                 `;
             }).join('');
+        }
+
+        async function completeAzioneProgettoDashboard(azioneId) {
+            try {
+                const { error } = await db
+                    .from('azioni_progetto')
+                    .update({ completata: true, completed_at: new Date().toISOString() })
+                    .eq('id', azioneId);
+
+                if (error) throw error;
+
+                showToast('Azione completata!', 'success');
+                await loadAzioniProgettiDashboard();
+                renderDashboard();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
         }
 
         async function openTaskFromDashboard(tipo, taskId, progettoId) {
@@ -3427,6 +3556,136 @@
             } catch (error) {
                 showToast('Errore: ' + error.message, 'error');
             }
+        }
+
+        // ==================== AZIONI PROGETTO ====================
+
+        async function openModalAzioneProgetto(id = null) {
+            document.getElementById('modalAzioneProgettoTitle').textContent = id ? 'Modifica Azione' : 'Nuova Azione';
+            document.getElementById('azioneProgettoId').value = id || '';
+            document.getElementById('azioneProgettoProgettoId').value = currentProjectId;
+
+            if (id) {
+                try {
+                    const { data: azione, error } = await db
+                        .from('azioni_progetto')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    document.getElementById('azioneProgettoDescrizione').value = azione.descrizione;
+                    document.getElementById('azioneProgettoPriorita').value = azione.priorita;
+                } catch (error) {
+                    showToast('Errore: ' + error.message, 'error');
+                    return;
+                }
+            } else {
+                document.getElementById('formAzioneProgetto').reset();
+                document.getElementById('azioneProgettoPriorita').value = '2';
+            }
+
+            openModal('modalAzioneProgetto');
+        }
+
+        async function salvaAzioneProgetto() {
+            const id = document.getElementById('azioneProgettoId').value;
+            const progettoId = document.getElementById('azioneProgettoProgettoId').value;
+
+            const data = {
+                progetto_id: progettoId,
+                descrizione: document.getElementById('azioneProgettoDescrizione').value,
+                priorita: parseInt(document.getElementById('azioneProgettoPriorita').value)
+            };
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('azioni_progetto')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Azione aggiornata!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('azioni_progetto')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Azione salvata!', 'success');
+                }
+
+                closeModal('modalAzioneProgetto');
+                await loadAzioniProgetti();
+                await openProject(currentProjectId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaAzioneProgetto(id) {
+            if (!confirm('Sei sicuro di voler eliminare questa azione?')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('azioni_progetto')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Azione eliminata', 'success');
+                await loadAzioniProgetti();
+                await openProject(currentProjectId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        function renderAzioneProgettoItem(azione) {
+            const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+            const priorityClass = { 1: 'alta', 2: 'media', 3: 'bassa' };
+
+            return `
+                <li class="credential-item">
+                    <div class="credential-icon" style="background: #9b59b6;">💡</div>
+                    <div class="credential-content">
+                        <div class="credential-title">${escapeHtml(azione.descrizione)}</div>
+                        <div class="credential-details">
+                            <span class="priority-tag ${priorityClass[azione.priorita]}">${priorityLabels[azione.priorita]}</span>
+                        </div>
+                    </div>
+                    <div class="credential-actions">
+                        <button onclick="completeAzioneProgetto('${azione.id}')" style="background: #27ae60; color: white;">✓ Fatto</button>
+                        <button onclick="openModalAzioneProgetto('${azione.id}')">✏️</button>
+                        <button onclick="eliminaAzioneProgetto('${azione.id}')">🗑️</button>
+                    </div>
+                </li>
+            `;
+        }
+
+        async function completeAzioneProgetto(azioneId) {
+            try {
+                const { error } = await db
+                    .from('azioni_progetto')
+                    .update({ completata: true, completed_at: new Date().toISOString() })
+                    .eq('id', azioneId);
+
+                if (error) throw error;
+
+                showToast('Azione completata!', 'success');
+                await loadAzioniProgetti();
+                await openProject(currentProjectId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function loadAzioniProgetti() {
+            // Funzione vuota - le azioni vengono caricate direttamente in openProject
+            // Questa funzione serve per eventuali aggiornamenti della dashboard
         }
 
         // ==================== TASK GENERALI ====================
