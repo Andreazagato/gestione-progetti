@@ -595,6 +595,21 @@
             text-decoration: line-through;
         }
 
+        .task-item.ritardo {
+            background: #fff5f5;
+            border-color: #ffcccc;
+        }
+
+        .scadenza-tag {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .scadenza-tag.ritardo {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
         .task-checkbox {
             width: 22px;
             height: 22px;
@@ -876,6 +891,166 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
+        /* Dashboard */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .dashboard-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .dashboard-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dashboard-urgent {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .dashboard-urgent h3 {
+            color: #e74c3c;
+        }
+
+        .dashboard-today {
+            border-left: 4px solid #f39c12;
+        }
+
+        .dashboard-today h3 {
+            color: #f39c12;
+        }
+
+        .dashboard-azioni {
+            border-left: 4px solid #9b59b6;
+        }
+
+        .dashboard-azioni h3 {
+            color: #9b59b6;
+        }
+
+        .dashboard-list {
+            list-style: none;
+        }
+
+        .dashboard-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .dashboard-item:hover {
+            border-color: #ddd;
+            background: #fafafa;
+        }
+
+        .dashboard-item.ritardo {
+            background: #fff5f5;
+            border-color: #ffcccc;
+        }
+
+        .dashboard-item-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .dashboard-item-checkbox:hover {
+            border-color: #27ae60;
+            background: #e8f5e9;
+        }
+
+        .dashboard-item-content {
+            flex: 1;
+        }
+
+        .dashboard-item-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .dashboard-item-meta {
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-item-meta .progetto-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .dashboard-item-meta .cliente-tag {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .dashboard-item-meta .priority-tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .dashboard-item-meta .priority-tag.alta {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .dashboard-item-meta .priority-tag.media {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .dashboard-item-meta .priority-tag.bassa {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .dashboard-item-meta .scadenza-tag {
+            color: #666;
+        }
+
+        .dashboard-item-meta .scadenza-tag.ritardo {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        .dashboard-empty {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .dashboard-section.hide-empty {
+            display: none;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -925,7 +1100,12 @@
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-item active" data-view="progetti">
+                <div class="nav-item active" data-view="dashboard">
+                    <span>🏠</span>
+                    <span>Dashboard</span>
+                    <span class="count count-urgent" id="countUrgenti" style="display: none; background: #e74c3c;">0</span>
+                </div>
+                <div class="nav-item" data-view="progetti">
                     <span>📁</span>
                     <span>Tutti i Progetti</span>
                     <span class="count" id="countProgetti">0</span>
@@ -976,8 +1156,61 @@
             </header>
 
             <div class="content-area">
+                <!-- Dashboard View -->
+                <div id="dashboardView" class="view-content">
+                    <div class="dashboard-container">
+                        <!-- Task in ritardo -->
+                        <div class="dashboard-section dashboard-urgent">
+                            <h3>🔴 In Ritardo</h3>
+                            <ul class="dashboard-list" id="dashboardRitardo">
+                                <div class="loading">Caricamento...</div>
+                            </ul>
+                        </div>
+
+                        <!-- Task oggi -->
+                        <div class="dashboard-section dashboard-today">
+                            <h3>📅 Oggi</h3>
+                            <ul class="dashboard-list" id="dashboardOggi">
+                                <div class="loading">Caricamento...</div>
+                            </ul>
+                        </div>
+
+                        <!-- Task domani -->
+                        <div class="dashboard-section">
+                            <h3>📆 Domani</h3>
+                            <ul class="dashboard-list" id="dashboardDomani">
+                                <div class="loading">Caricamento...</div>
+                            </ul>
+                        </div>
+
+                        <!-- Task questa settimana -->
+                        <div class="dashboard-section">
+                            <h3>🗓️ Questa Settimana</h3>
+                            <ul class="dashboard-list" id="dashboardSettimana">
+                                <div class="loading">Caricamento...</div>
+                            </ul>
+                        </div>
+
+                        <!-- Task in corso senza scadenza -->
+                        <div class="dashboard-section">
+                            <h3>🔄 In Corso</h3>
+                            <ul class="dashboard-list" id="dashboardInCorso">
+                                <div class="loading">Caricamento...</div>
+                            </ul>
+                        </div>
+
+                        <!-- Azioni successive clienti -->
+                        <div class="dashboard-section dashboard-azioni">
+                            <h3>💡 Azioni Successive Clienti</h3>
+                            <ul class="dashboard-list" id="dashboardAzioni">
+                                <div class="loading">Caricamento...</div>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Projects List View -->
-                <div id="projectsView" class="view-content">
+                <div id="projectsView" class="view-content" style="display: none;">
                     <div class="projects-grid" id="projectsGrid">
                         <div class="loading">Caricamento...</div>
                     </div>
@@ -1096,6 +1329,10 @@
                             <option value="in_corso">In corso</option>
                             <option value="completato">Completato</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Data Scadenza</label>
+                        <input type="date" id="taskScadenza">
                     </div>
                 </form>
             </div>
@@ -1232,6 +1469,38 @@
         </div>
     </div>
 
+    <!-- Modal Nuova Azione Successiva Cliente -->
+    <div class="modal-overlay" id="modalAzione">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalAzioneTitle">Nuova Azione</h3>
+                <button class="modal-close" onclick="closeModal('modalAzione')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formAzione">
+                    <input type="hidden" id="azioneId">
+                    <input type="hidden" id="azioneClienteId">
+                    <div class="form-group">
+                        <label>Descrizione *</label>
+                        <textarea id="azioneDescrizione" placeholder="Es: Richiamare per conferma, Inviare preventivo, Verificare pagamento..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Priorità</label>
+                        <select id="azionePriorita">
+                            <option value="1">Alta</option>
+                            <option value="2" selected>Media</option>
+                            <option value="3">Bassa</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalAzione')">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaAzione()">Salva</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Nuova Attività Cliente -->
     <div class="modal-overlay" id="modalAttivita">
         <div class="modal">
@@ -1277,7 +1546,9 @@
         let progetti = [];
         let clienti = [];
         let taskGenerali = [];
-        let currentView = 'progetti';
+        let azioniClienti = [];
+        let allTasks = []; // Tutti i task per la dashboard
+        let currentView = 'dashboard';
         let currentProjectId = null;
         let currentClienteId = null;
         let currentFilter = 'tutti';
@@ -1485,7 +1756,10 @@
             await loadClienti();
             await loadProgetti();
             await loadTaskGenerali();
+            await loadAzioniClienti();
+            await loadAllTasks();
             setupEventListeners();
+            navigateTo('dashboard'); // Mostra dashboard come prima schermata
         }
 
         // Inizializzazione
@@ -1531,23 +1805,32 @@
             const btnNuovo = document.getElementById('btnNuovo');
             const viewTitle = document.getElementById('viewTitle');
 
+            document.getElementById('dashboardView').style.display = 'none';
             document.getElementById('projectsView').style.display = 'none';
             document.getElementById('projectDetailView').classList.remove('active');
             document.getElementById('clientiView').style.display = 'none';
             document.getElementById('clienteDetailView').classList.remove('active');
             document.getElementById('taskGeneraliView').style.display = 'none';
 
-            if (view === 'clienti') {
+            if (view === 'dashboard') {
+                viewTitle.textContent = 'Dashboard';
+                btnNuovo.style.display = 'none';
+                document.getElementById('dashboardView').style.display = 'block';
+                renderDashboard();
+            } else if (view === 'clienti') {
                 viewTitle.textContent = 'Clienti';
+                btnNuovo.style.display = 'block';
                 btnNuovo.textContent = '+ Nuovo Cliente';
                 document.getElementById('clientiView').style.display = 'block';
                 renderClienti();
             } else if (view === 'task_generali') {
                 viewTitle.textContent = 'Task Generali';
+                btnNuovo.style.display = 'block';
                 btnNuovo.textContent = '+ Nuovo Task';
                 document.getElementById('taskGeneraliView').style.display = 'block';
                 renderTaskGenerali();
             } else {
+                btnNuovo.style.display = 'block';
                 btnNuovo.textContent = '+ Nuovo Progetto';
                 document.getElementById('projectsView').style.display = 'block';
 
@@ -1744,6 +2027,7 @@
                     .eq('progetto_id', id)
                     .order('nome_servizio');
 
+                document.getElementById('dashboardView').style.display = 'none';
                 document.getElementById('projectsView').style.display = 'none';
                 document.getElementById('clientiView').style.display = 'none';
                 document.getElementById('clienteDetailView').classList.remove('active');
@@ -1912,8 +2196,10 @@
 
         function renderTaskItem(task) {
             const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+            const isRitardo = task.data_scadenza && getDateCategory(task.data_scadenza) === 'ritardo';
+            const scadenzaClass = isRitardo ? 'ritardo' : '';
             return `
-                <li class="task-item ${task.stato}" data-stato="${task.stato}">
+                <li class="task-item ${task.stato} ${isRitardo && task.stato !== 'completato' ? 'ritardo' : ''}" data-stato="${task.stato}">
                     <div class="task-checkbox" onclick="toggleTaskStatus('${task.id}', '${task.stato}')">
                         ${task.stato === 'completato' ? '✓' : task.stato === 'in_corso' ? '◐' : ''}
                     </div>
@@ -1922,6 +2208,7 @@
                         ${task.descrizione ? `<div class="task-description">${escapeHtml(task.descrizione)}</div>` : ''}
                         <div class="task-meta">
                             <span class="task-priority priority-${task.priorita}">Priorità: ${priorityLabels[task.priorita]}</span>
+                            ${task.data_scadenza ? `<span class="scadenza-tag ${scadenzaClass}">📅 ${formatData(task.data_scadenza)}</span>` : ''}
                             <select class="task-status-select" onchange="changeTaskStatus('${task.id}', this.value)">
                                 <option value="da_fare" ${task.stato === 'da_fare' ? 'selected' : ''}>Da fare</option>
                                 <option value="in_corso" ${task.stato === 'in_corso' ? 'selected' : ''}>In corso</option>
@@ -2043,9 +2330,19 @@
                     .eq('cliente_id', id)
                     .order('data', { ascending: false });
 
+                // Carica azioni successive del cliente
+                const { data: azioniCliente } = await db
+                    .from('azioni_cliente')
+                    .select('*')
+                    .eq('cliente_id', id)
+                    .eq('completata', false)
+                    .order('priorita')
+                    .order('created_at', { ascending: false });
+
                 const progettiCliente = progetti.filter(p => p.cliente_id === id);
 
                 document.getElementById('projectsView').style.display = 'none';
+                document.getElementById('dashboardView').style.display = 'none';
                 document.getElementById('clientiView').style.display = 'none';
                 document.getElementById('projectDetailView').classList.remove('active');
 
@@ -2098,6 +2395,20 @@
                         <div class="notes-content">${escapeHtml(noteClienteDecriptate)}</div>
                     </div>
                     ` : ''}
+
+                    <div class="credentials-section" style="border-left: 4px solid #9b59b6;">
+                        <h3 style="color: #9b59b6;">
+                            💡 Azioni Successive (${(azioniCliente || []).length})
+                            <button class="btn btn-primary btn-small" onclick="openModalAzione()">+ Aggiungi</button>
+                        </h3>
+                        <ul class="credentials-list">
+                            ${(azioniCliente || []).length === 0 ? `
+                                <div class="empty-state" style="padding: 30px;">
+                                    <p>Nessuna azione da fare per questo cliente.</p>
+                                </div>
+                            ` : (azioniCliente || []).map(az => renderAzioneItem(az)).join('')}
+                        </ul>
+                    </div>
 
                     <div class="credentials-section">
                         <h3>
@@ -2274,6 +2585,7 @@
                     document.getElementById('taskDescrizione').value = task.descrizione || '';
                     document.getElementById('taskPriorita').value = task.priorita;
                     document.getElementById('taskStato').value = task.stato;
+                    document.getElementById('taskScadenza').value = task.data_scadenza || '';
                 } catch (error) {
                     showToast('Errore: ' + error.message, 'error');
                     return;
@@ -2282,6 +2594,7 @@
                 document.getElementById('formTask').reset();
                 document.getElementById('taskPriorita').value = '2';
                 document.getElementById('taskStato').value = 'da_fare';
+                document.getElementById('taskScadenza').value = '';
             }
 
             openModal('modalTask');
@@ -2294,7 +2607,8 @@
                 titolo: document.getElementById('taskTitolo').value,
                 descrizione: document.getElementById('taskDescrizione').value || null,
                 priorita: parseInt(document.getElementById('taskPriorita').value),
-                stato: document.getElementById('taskStato').value
+                stato: document.getElementById('taskStato').value,
+                data_scadenza: document.getElementById('taskScadenza').value || null
             };
 
             if (data.stato === 'completato') {
@@ -2318,6 +2632,7 @@
                 }
 
                 closeModal('modalTask');
+                await loadAllTasks();
                 await openProject(currentProjectId);
             } catch (error) {
                 showToast('Errore: ' + error.message, 'error');
@@ -2691,6 +3006,427 @@
             setTimeout(() => {
                 toast.remove();
             }, 3000);
+        }
+
+        // ==================== DASHBOARD ====================
+
+        async function loadAllTasks() {
+            try {
+                // Carica tutti i task dei progetti con info progetto e cliente
+                const { data, error } = await db
+                    .from('task')
+                    .select(`
+                        *,
+                        progetti (id, nome, cliente_id, clienti (id, nome))
+                    `)
+                    .neq('stato', 'completato')
+                    .order('priorita');
+
+                if (error) throw error;
+                allTasks = data || [];
+                updateUrgentCount();
+            } catch (error) {
+                showToast('Errore caricamento task: ' + error.message, 'error');
+            }
+        }
+
+        async function loadAzioniClienti() {
+            try {
+                const { data, error } = await db
+                    .from('azioni_cliente')
+                    .select(`
+                        *,
+                        clienti (id, nome)
+                    `)
+                    .eq('completata', false)
+                    .order('priorita')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                azioniClienti = data || [];
+            } catch (error) {
+                showToast('Errore caricamento azioni: ' + error.message, 'error');
+            }
+        }
+
+        function updateUrgentCount() {
+            const oggi = new Date();
+            oggi.setHours(0, 0, 0, 0);
+
+            // Conta task in ritardo + task oggi (progetti + task generali)
+            let countUrgent = 0;
+
+            // Task progetti
+            allTasks.forEach(task => {
+                if (task.data_scadenza) {
+                    const scadenza = new Date(task.data_scadenza);
+                    if (scadenza <= oggi) countUrgent++;
+                }
+            });
+
+            // Task generali
+            taskGenerali.filter(t => t.stato !== 'completato').forEach(task => {
+                if (task.data_scadenza) {
+                    const scadenza = new Date(task.data_scadenza);
+                    if (scadenza <= oggi) countUrgent++;
+                }
+            });
+
+            const countEl = document.getElementById('countUrgenti');
+            if (countUrgent > 0) {
+                countEl.textContent = countUrgent;
+                countEl.style.display = 'inline';
+            } else {
+                countEl.style.display = 'none';
+            }
+        }
+
+        function getDateCategory(dateStr) {
+            if (!dateStr) return null;
+
+            const oggi = new Date();
+            oggi.setHours(0, 0, 0, 0);
+
+            const domani = new Date(oggi);
+            domani.setDate(domani.getDate() + 1);
+
+            const fineSett = new Date(oggi);
+            fineSett.setDate(fineSett.getDate() + 7);
+
+            const data = new Date(dateStr);
+            data.setHours(0, 0, 0, 0);
+
+            if (data < oggi) return 'ritardo';
+            if (data.getTime() === oggi.getTime()) return 'oggi';
+            if (data.getTime() === domani.getTime()) return 'domani';
+            if (data <= fineSett) return 'settimana';
+            return 'futuro';
+        }
+
+        async function renderDashboard() {
+            const oggi = new Date();
+            oggi.setHours(0, 0, 0, 0);
+
+            // Prepara i task suddivisi per categoria
+            const taskRitardo = [];
+            const taskOggi = [];
+            const taskDomani = [];
+            const taskSettimana = [];
+            const taskInCorso = [];
+
+            // Processa task dei progetti
+            for (const task of allTasks) {
+                const categoria = getDateCategory(task.data_scadenza);
+                const item = {
+                    id: task.id,
+                    tipo: 'task_progetto',
+                    titolo: task.titolo,
+                    priorita: task.priorita,
+                    stato: task.stato,
+                    scadenza: task.data_scadenza,
+                    progetto: task.progetti?.nome,
+                    progettoId: task.progetti?.id,
+                    cliente: task.progetti?.clienti?.nome
+                };
+
+                if (categoria === 'ritardo') taskRitardo.push(item);
+                else if (categoria === 'oggi') taskOggi.push(item);
+                else if (categoria === 'domani') taskDomani.push(item);
+                else if (categoria === 'settimana') taskSettimana.push(item);
+                else if (task.stato === 'in_corso') taskInCorso.push(item);
+            }
+
+            // Processa task generali
+            for (const task of taskGenerali.filter(t => t.stato !== 'completato')) {
+                const categoria = getDateCategory(task.data_scadenza);
+                const item = {
+                    id: task.id,
+                    tipo: 'task_generale',
+                    titolo: task.titolo,
+                    priorita: task.priorita,
+                    stato: task.stato,
+                    scadenza: task.data_scadenza,
+                    progetto: null,
+                    cliente: null
+                };
+
+                if (categoria === 'ritardo') taskRitardo.push(item);
+                else if (categoria === 'oggi') taskOggi.push(item);
+                else if (categoria === 'domani') taskDomani.push(item);
+                else if (categoria === 'settimana') taskSettimana.push(item);
+                else if (task.stato === 'in_corso') taskInCorso.push(item);
+            }
+
+            // Ordina per priorità
+            const sortByPriority = (a, b) => a.priorita - b.priorita;
+            taskRitardo.sort(sortByPriority);
+            taskOggi.sort(sortByPriority);
+            taskDomani.sort(sortByPriority);
+            taskSettimana.sort(sortByPriority);
+            taskInCorso.sort(sortByPriority);
+
+            // Render sezioni
+            renderDashboardSection('dashboardRitardo', taskRitardo, 'Nessun task in ritardo');
+            renderDashboardSection('dashboardOggi', taskOggi, 'Nessun task per oggi');
+            renderDashboardSection('dashboardDomani', taskDomani, 'Nessun task per domani');
+            renderDashboardSection('dashboardSettimana', taskSettimana, 'Nessun task questa settimana');
+            renderDashboardSection('dashboardInCorso', taskInCorso, 'Nessun task in corso');
+
+            // Render azioni clienti
+            renderAzioniDashboard();
+
+            // Nascondi sezioni vuote (tranne ritardo e oggi)
+            toggleEmptySection('dashboardDomani', taskDomani.length);
+            toggleEmptySection('dashboardSettimana', taskSettimana.length);
+            toggleEmptySection('dashboardInCorso', taskInCorso.length);
+        }
+
+        function toggleEmptySection(containerId, count) {
+            const section = document.getElementById(containerId).parentElement;
+            if (count === 0) {
+                section.classList.add('hide-empty');
+            } else {
+                section.classList.remove('hide-empty');
+            }
+        }
+
+        function renderDashboardSection(containerId, items, emptyMessage) {
+            const container = document.getElementById(containerId);
+
+            if (items.length === 0) {
+                container.innerHTML = `<div class="dashboard-empty">${emptyMessage}</div>`;
+                return;
+            }
+
+            container.innerHTML = items.map(item => {
+                const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+                const priorityClass = { 1: 'alta', 2: 'media', 3: 'bassa' };
+                const isRitardo = getDateCategory(item.scadenza) === 'ritardo';
+
+                return `
+                    <li class="dashboard-item ${isRitardo ? 'ritardo' : ''}" onclick="openTaskFromDashboard('${item.tipo}', '${item.id}', '${item.progettoId || ''}')">
+                        <div class="dashboard-item-checkbox" onclick="event.stopPropagation(); completeDashboardTask('${item.tipo}', '${item.id}')">
+                        </div>
+                        <div class="dashboard-item-content">
+                            <div class="dashboard-item-title">${escapeHtml(item.titolo)}</div>
+                            <div class="dashboard-item-meta">
+                                ${item.progetto ? `<span class="progetto-tag">📁 ${escapeHtml(item.progetto)}</span>` : ''}
+                                ${item.cliente ? `<span class="cliente-tag">👤 ${escapeHtml(item.cliente)}</span>` : ''}
+                                ${item.tipo === 'task_generale' ? `<span class="progetto-tag">📝 Task Generale</span>` : ''}
+                                <span class="priority-tag ${priorityClass[item.priorita]}">${priorityLabels[item.priorita]}</span>
+                                ${item.scadenza ? `<span class="scadenza-tag ${isRitardo ? 'ritardo' : ''}">📅 ${formatData(item.scadenza)}</span>` : ''}
+                            </div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function renderAzioniDashboard() {
+            const container = document.getElementById('dashboardAzioni');
+
+            if (azioniClienti.length === 0) {
+                container.innerHTML = `<div class="dashboard-empty">Nessuna azione da fare</div>`;
+                const section = container.parentElement;
+                section.classList.add('hide-empty');
+                return;
+            }
+
+            container.parentElement.classList.remove('hide-empty');
+
+            container.innerHTML = azioniClienti.map(azione => {
+                const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+                const priorityClass = { 1: 'alta', 2: 'media', 3: 'bassa' };
+
+                return `
+                    <li class="dashboard-item" onclick="openCliente('${azione.cliente_id}')">
+                        <div class="dashboard-item-checkbox" onclick="event.stopPropagation(); completeAzione('${azione.id}')">
+                        </div>
+                        <div class="dashboard-item-content">
+                            <div class="dashboard-item-title">${escapeHtml(azione.descrizione)}</div>
+                            <div class="dashboard-item-meta">
+                                <span class="cliente-tag">👤 ${escapeHtml(azione.clienti?.nome || 'Cliente')}</span>
+                                <span class="priority-tag ${priorityClass[azione.priorita]}">${priorityLabels[azione.priorita]}</span>
+                            </div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        async function openTaskFromDashboard(tipo, taskId, progettoId) {
+            if (tipo === 'task_progetto' && progettoId) {
+                await openProject(progettoId);
+            } else if (tipo === 'task_generale') {
+                navigateTo('task_generali');
+            }
+        }
+
+        async function completeDashboardTask(tipo, taskId) {
+            try {
+                if (tipo === 'task_progetto') {
+                    const { error } = await db
+                        .from('task')
+                        .update({ stato: 'completato', completed_at: new Date().toISOString() })
+                        .eq('id', taskId);
+                    if (error) throw error;
+                } else if (tipo === 'task_generale') {
+                    const { error } = await db
+                        .from('task_generali')
+                        .update({ stato: 'completato', completed_at: new Date().toISOString() })
+                        .eq('id', taskId);
+                    if (error) throw error;
+                }
+
+                showToast('Task completato!', 'success');
+                await loadAllTasks();
+                await loadTaskGenerali();
+                renderDashboard();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function completeAzione(azioneId) {
+            try {
+                const { error } = await db
+                    .from('azioni_cliente')
+                    .update({ completata: true, completed_at: new Date().toISOString() })
+                    .eq('id', azioneId);
+
+                if (error) throw error;
+
+                showToast('Azione completata!', 'success');
+                await loadAzioniClienti();
+                renderDashboard();
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== AZIONI CLIENTE ====================
+
+        async function openModalAzione(id = null) {
+            document.getElementById('modalAzioneTitle').textContent = id ? 'Modifica Azione' : 'Nuova Azione';
+            document.getElementById('azioneId').value = id || '';
+            document.getElementById('azioneClienteId').value = currentClienteId;
+
+            if (id) {
+                try {
+                    const { data: azione, error } = await db
+                        .from('azioni_cliente')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    document.getElementById('azioneDescrizione').value = azione.descrizione;
+                    document.getElementById('azionePriorita').value = azione.priorita;
+                } catch (error) {
+                    showToast('Errore: ' + error.message, 'error');
+                    return;
+                }
+            } else {
+                document.getElementById('formAzione').reset();
+                document.getElementById('azionePriorita').value = '2';
+            }
+
+            openModal('modalAzione');
+        }
+
+        async function salvaAzione() {
+            const id = document.getElementById('azioneId').value;
+            const clienteId = document.getElementById('azioneClienteId').value;
+
+            const data = {
+                cliente_id: clienteId,
+                descrizione: document.getElementById('azioneDescrizione').value,
+                priorita: parseInt(document.getElementById('azionePriorita').value)
+            };
+
+            try {
+                if (id) {
+                    const { error } = await db
+                        .from('azioni_cliente')
+                        .update(data)
+                        .eq('id', id);
+                    if (error) throw error;
+                    showToast('Azione aggiornata!', 'success');
+                } else {
+                    const { error } = await db
+                        .from('azioni_cliente')
+                        .insert([data]);
+                    if (error) throw error;
+                    showToast('Azione salvata!', 'success');
+                }
+
+                closeModal('modalAzione');
+                await loadAzioniClienti();
+                await openCliente(currentClienteId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        async function eliminaAzione(id) {
+            if (!confirm('Sei sicuro di voler eliminare questa azione?')) {
+                return;
+            }
+
+            try {
+                const { error } = await db
+                    .from('azioni_cliente')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showToast('Azione eliminata', 'success');
+                await loadAzioniClienti();
+                await openCliente(currentClienteId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
+        }
+
+        function renderAzioneItem(azione) {
+            const priorityLabels = { 1: 'Alta', 2: 'Media', 3: 'Bassa' };
+            const priorityClass = { 1: 'alta', 2: 'media', 3: 'bassa' };
+
+            return `
+                <li class="credential-item">
+                    <div class="credential-icon" style="background: #9b59b6;">💡</div>
+                    <div class="credential-content">
+                        <div class="credential-title">${escapeHtml(azione.descrizione)}</div>
+                        <div class="credential-details">
+                            <span class="priority-tag ${priorityClass[azione.priorita]}">${priorityLabels[azione.priorita]}</span>
+                        </div>
+                    </div>
+                    <div class="credential-actions">
+                        <button onclick="completeAzioneFromCliente('${azione.id}')" style="background: #27ae60; color: white;">✓ Fatto</button>
+                        <button onclick="openModalAzione('${azione.id}')">✏️</button>
+                        <button onclick="eliminaAzione('${azione.id}')">🗑️</button>
+                    </div>
+                </li>
+            `;
+        }
+
+        async function completeAzioneFromCliente(azioneId) {
+            try {
+                const { error } = await db
+                    .from('azioni_cliente')
+                    .update({ completata: true, completed_at: new Date().toISOString() })
+                    .eq('id', azioneId);
+
+                if (error) throw error;
+
+                showToast('Azione completata!', 'success');
+                await loadAzioniClienti();
+                await openCliente(currentClienteId);
+            } catch (error) {
+                showToast('Errore: ' + error.message, 'error');
+            }
         }
 
         // ==================== TASK GENERALI ====================
